@@ -1,0 +1,451 @@
+import React, {Component} from 'react';
+import {
+  Button,
+  Col,
+  Form,
+  Icon,
+  Input,
+  message,
+  Modal,
+  Radio,
+  Row,
+  TreeSelect,
+  Upload,
+  Checkbox,
+} from 'antd';
+import Constants, {VaiTro} from "../../../settings/constants";
+import {InputTrim} from "../../../components/uielements/InputTrim";
+import moment from "moment";
+import Select, {Option} from "../../../components/uielements/select";
+import DatePicker from "../../../components/uielements/datePickerFormat";
+import apiPhanQuyen from "../QLPhanQuyen/config";
+
+const {
+  ITEM_LAYOUT,
+  ITEM_LAYOUT_HALF2,
+  COL_ITEM_LAYOUT_HALF2,
+  COL_COL_ITEM_LAYOUT_RIGHT2,
+  REQUIRED,
+} = Constants;
+const {Item} = Form;
+const {Group} = Radio;
+
+function getBase64(img, callback) {
+  const reader = new FileReader();
+  reader.addEventListener('load', () => callback(reader.result));
+  reader.readAsDataURL(img);
+}
+
+function beforeUpload(file) {
+  const isJpgOrPng = file.type === 'image/jpeg' || file.type === 'image/png';
+  if (!isJpgOrPng) {
+    message.error('Sai định dạng ảnh (JPG hoặc PNG)');
+  }
+  const isLt2M = file.size / 1024 / 1024 < 1;
+  if (!isLt2M) {
+    message.error('File ảnh phải nhỏ hơn 1MB');
+  }
+  return isJpgOrPng && isLt2M;
+}
+
+const error = new Error("Thông tin bắt buộc");
+const toDay = new Date();
+const ModalAddEdit = Form.create({name: 'modal_add_edit_taikhoan'})(
+  class extends Component {
+    constructor(props) {
+      super(props);
+      this.state = {
+        loadingAvatar: false,
+        AnhHoSo: "",
+        isTouch: false,
+        checked: false,
+        DanhSachNhomNguoiDung: [],
+        isTouchCoQuan: false,
+      };
+    }
+
+    upperFirstLetter = (word) => {
+      let text = word.split(' ');
+      let res = [];
+      for (let i = 0; i < text.length; i++) {
+        let text2 = text[i].split('');
+        text2[0] = text2[0].toUpperCase();
+        text2 = text2.join('');
+        res[res.length] = text2;
+      }
+      return res.join(' ');
+    };
+
+    onOk = (e) => {
+      e.preventDefault();
+      this.props.form.validateFields((err, value) => {
+        if (!err) {
+          const {isTouch, checked} = this.state;
+          const {dataEdit} = this.props;
+          const TenNguoiDung = this.props.form.getFieldValue('TenNguoiDung').toLowerCase();
+          if (TenNguoiDung === '' || TenNguoiDung == undefined) {
+            this.props.form.setFields({
+              TenNguoiDung: {
+                errors: [new Error("Thông tin bắt buộc")]
+              }
+            });
+            return;
+          }
+          value.TenCanBo = this.upperFirstLetter(value.TenCanBo);
+          value.DienThoai = value.DienThoai === 's' ? "" : value.DienThoai;
+          value.AnhHoSo = this.state.AnhHoSo;
+          value.LaLeTan = isTouch ? checked : dataEdit.LaLeTan ? dataEdit.LaLeTan : checked;
+          value.XemTaiLieuMat = true;
+          value.VaiTro = 2;
+          // value.LaVanThu = isTouchVanThu ? checkedVanThu : dataEdit.XemTaiLieuMat ? dataEdit.XemTaiLieuMat : checkedVanThu;
+          // if (!showVanThu) {
+          //   value.LaVanThu = false;
+          // }
+          const {onCreate} = this.props;
+          onCreate(value);
+          this.setState({AnhHoSo: ""});
+        }
+      });
+    };
+
+    componentDidMount() {
+      const {DanhSachNhomNguoiDung, actions} = this.props;
+      this.setState({DanhSachNhomNguoiDung: actions === 'edit' ? DanhSachNhomNguoiDung : []});
+    }
+
+    handleChange = info => {
+      // if (info.file.status === 'uploading') {
+      //   this.setState({loading: true});
+      //   return;
+      // }
+      if (info.file.status === 'error') {
+        info.file.status = 'done'
+      }
+      if (info.file.status === 'done') {
+        // Get this url from response in real world.
+        getBase64(info.file.originFileObj, AnhHoSo =>
+          this.setState({
+            AnhHoSo,
+            loading: false,
+          }),
+        );
+        //console.log(this.state.AnhHoSo);
+      }
+    };
+
+    disabledDate(current) {
+      // Can not select days after today and today
+      return current && current > moment().endOf("day");
+    }
+
+    InputTen = (e) => {
+      const key = e.charCode;
+      if (
+        (key === 32 && e.target.value[e.target.value.length - 1] === " ") ||
+        (key === 32 && e.target.value.length === 0)
+      ) {
+        e.preventDefault();
+      }
+    };
+
+    inputCMND = (e) => {
+      const key = e.charCode;
+      if (key < 48 || key > 57) {
+        e.preventDefault();
+      }
+    };
+
+    onCancel = () => {
+      const {onCancel} = this.props;
+      onCancel();
+    };
+
+    inputTaiKhoan = (e) => {
+      const key = e.charCode;
+      if (key === 32) {
+        e.preventDefault();
+      }
+    };
+
+    checkDuplicate = (e) => {
+      const {actions, dataEdit} = this.props;
+      const value = e.target.value.toLowerCase();
+      const {DanhSachTaiKhoanAll} = this.props;
+      const {setFields} = this.props.form;
+      const data = DanhSachTaiKhoanAll.filter(item => item.TenNguoiDung === value);
+      if (data.length > 0) {
+        if (actions === 'edit') {
+          if (data[0].TenNguoiDung === dataEdit.TenNguoiDung) {
+            setFields({
+              TenNguoiDung: {
+                value: value
+              }
+            });
+          } else {
+            if (value === "") {
+              setFields({
+                TenNguoiDung: {
+                  errors: [new Error('Thông tin bắt buộc')],
+                },
+              });
+              this.setState({error: true});
+            } else {
+              setFields({
+                TenNguoiDung: {
+                  errors: [new Error('Tài khoản đã tồn tại')],
+                },
+              });
+              this.setState({error: true});
+            }
+          }
+        } else {
+          setFields({
+            TenNguoiDung: {
+              errors: [new Error('Tài khoản đã tồn tại')],
+            },
+          });
+          this.setState({error: true});
+        }
+      } else {
+        setFields({
+          TenNguoiDung: {
+            value: value
+          }
+        });
+        this.setState({error: false});
+        const myRg = /[^0-9a-zA-Z_@.\s]/g;//Chỉ nhập kí tự chữ và số, @, ., _
+        const validate = myRg.test(value);
+        if (validate) {
+          setFields({
+            TenNguoiDung: {
+              errors: [new Error("Tên đăng nhập không hợp lệ")]
+            }
+          });
+          this.setState({error: true});
+        } else {
+          setFields({
+            TenNguoiDung: {
+              value: value
+            }
+          });
+          this.setState({error: false});
+        }
+      }
+    };
+
+    changeCoQuan = (value) => {
+      //Clear data nhóm người dùng
+      this.props.form.setFieldsValue({ListNhomNguoiDungID: []});
+      //Lấy danh sách nhóm người dùng theo cơ quan
+      if (value) {
+        apiPhanQuyen.DanhSachNhomByCoQuanID({CoQuanID: value})
+          .then(response => {
+            if (response.data.Status > 0) {
+              this.setState({DanhSachNhomNguoiDung: response.data.Data});
+            }
+          })
+      }
+    };
+
+    render() {
+      const {visible, onCancel, form, DanhSachCoQuan, dataEdit, loading, actions} = this.props;
+      const {DanhSachNhomNguoiDung} = this.state;
+      const DanhSachChucVu = this.props.DanhSachChucVu ? this.props.DanhSachChucVu : [];
+      const {getFieldDecorator} = form;
+      const {error} = this.state;
+      let titleModal = "Thêm thông tin tài khoản";
+      if (actions === 'edit') {
+        titleModal = "Sửa thông tin tài khoản";
+      }
+
+      const uploadButton = (
+        <div>
+          <Icon type={this.state.loading ? 'loading' : 'plus'}/>
+          <div className="ant-upload-text">Tải ảnh lên</div>
+        </div>
+      );
+
+      let AnhHoSo = dataEdit.AnhHoSo ? dataEdit.AnhHoSo : this.state.AnhHoSo;
+      const AnhHoSoState = this.state.AnhHoSo;
+      AnhHoSo = AnhHoSoState === "" ? AnhHoSo : AnhHoSoState;
+      return (
+        <Modal
+          title={titleModal}
+          width={1000}
+          onCancel={this.onCancel}
+          visible={visible}
+          footer={[
+            <Button key="back" onClick={onCancel}>Hủy</Button>,
+            <Button key="submit" htmlType="submit" type="primary" form="myForm"
+                    onClick={this.onOk} loading={loading} disabled={loading || error}>Lưu</Button>,
+          ]}
+        >
+          <Form id="myForm">
+            {getFieldDecorator('CanBoID', {initialValue: dataEdit.CanBoID ? dataEdit.CanBoID : null})}
+            <Item label="Ảnh đại diện" {...ITEM_LAYOUT}>
+              {getFieldDecorator('AnhHoSo')(
+                <Upload
+                  name="avatar"
+                  listType="picture-card"
+                  className="avatar-uploader"
+                  showUploadList={false}
+                  beforeUpload={beforeUpload}
+                  onChange={this.handleChange}
+                  accept={".png, .jpg, .jpeg"}
+                >
+                  {AnhHoSo ? <img src={AnhHoSo} alt="avatar" style={{width: '100%'}}/> : uploadButton}
+                </Upload>
+              )}
+            </Item>
+            <Row>
+              <Col {...COL_ITEM_LAYOUT_HALF2}>
+                <Item label={<span>Tên tài khoản <span style={{color: 'red'}}>*</span></span>} {...ITEM_LAYOUT_HALF2}>
+                  {getFieldDecorator('TenNguoiDung', {
+                    initialValue: dataEdit.TenNguoiDung ? dataEdit.TenNguoiDung : ""
+                  })(
+                    <Input autoFocus onKeyPress={this.inputTaiKhoan} onChange={this.checkDuplicate}/>)}
+                </Item>
+              </Col>
+              <Col {...COL_ITEM_LAYOUT_HALF2}>
+                <Row>
+                  <Col {...COL_COL_ITEM_LAYOUT_RIGHT2}>
+                    <Item label={"Tên cán bộ"} {...ITEM_LAYOUT_HALF2}>
+                      {getFieldDecorator('TenCanBo', {
+                        initialValue: dataEdit.TenCanBo ? dataEdit.TenCanBo : '',
+                        rules: [{...REQUIRED}]
+                      })
+                      (<Input onKeyPress={this.InputTen} style={{textTransform: "capitalize"}}/>)
+                      }
+                    </Item>
+                  </Col>
+                </Row>
+              </Col>
+            </Row>
+            <Row>
+              <Col {...COL_ITEM_LAYOUT_HALF2}>
+                <Item label={"Ngày sinh"} {...ITEM_LAYOUT_HALF2} className={'datepicker'}>
+                  {getFieldDecorator('NgaySinh', {
+                    initialValue: dataEdit.NgaySinh ? dataEdit.NgaySinh : "",
+                    rules: [{...REQUIRED}]
+                  })
+                  (
+                    <DatePicker format={'DD/MM/YYYY'} placeholder={""} style={{width: "100%"}}
+                                disabledDate={this.disabledDate}/>
+                  )}
+                </Item>
+              </Col>
+              <Col {...COL_ITEM_LAYOUT_HALF2}>
+                <Row>
+                  <Col {...COL_COL_ITEM_LAYOUT_RIGHT2}>
+                    <Item label={"Giới tính"} {...ITEM_LAYOUT_HALF2}>
+                      {getFieldDecorator('GioiTinh', {
+                        initialValue: dataEdit.GioiTinh != undefined ? dataEdit.GioiTinh : 1,
+                      })(
+                        <Group>
+                          <Radio value={1}>Nam</Radio>
+                          <Radio value={0}>Nữ</Radio>
+                        </Group>,
+                      )}
+                    </Item>
+                  </Col>
+                </Row>
+              </Col>
+            </Row>
+            <Row>
+              <Col {...COL_ITEM_LAYOUT_HALF2}>
+                <Item label={"Email"} {...ITEM_LAYOUT_HALF2}>
+                  {getFieldDecorator('Email', {
+                    initialValue: dataEdit.Email ? dataEdit.Email : "",
+                    rules: [{type: "email", message: "Không đúng định dạng email"}]
+                  })(
+                    <InputTrim/>)}
+                </Item>
+              </Col>
+              <Col {...COL_ITEM_LAYOUT_HALF2}>
+                <Row>
+                  <Col {...COL_COL_ITEM_LAYOUT_RIGHT2}>
+                    <Item label={"Điện thoại"} {...ITEM_LAYOUT_HALF2}>
+                      {getFieldDecorator('DienThoai', {
+                        initialValue: dataEdit.DienThoai ? dataEdit.DienThoai : "",
+                      })(
+                        <Input onKeyPress={this.inputCMND}/>)}
+                    </Item>
+                  </Col>
+                </Row>
+              </Col>
+            </Row>
+            <Item label={"Chỗ ở hiện tại"} {...ITEM_LAYOUT}>
+              {getFieldDecorator('DiaChi', {
+                initialValue: dataEdit.DiaChi ? dataEdit.DiaChi : ""
+              })(
+                <Input/>)}
+            </Item>
+            <Row>
+              <Col {...COL_ITEM_LAYOUT_HALF2}>
+                <Item allowClear={true} label={"Chức vụ"} {...ITEM_LAYOUT_HALF2}>
+                  {getFieldDecorator('DanhSachChucVuID', {
+                    initialValue: dataEdit.DanhSachChucVuID ? dataEdit.DanhSachChucVuID : undefined,
+                    rules: [{...REQUIRED}]
+                  })
+                  (<Select placeholder={"Chọn chức vụ"}
+                           notFoundContent={"Không có dữ liệu"} showSearch showArrow={false}
+                           optionFilterProp={'label'} mode={"multiple"}>
+                    {DanhSachChucVu.map((e) => {
+                      return <Option value={e.ChucVuID} label={e.TenChucVu}>{e.TenChucVu}</Option>;
+                    })}
+                  </Select>)
+                  }
+                </Item>
+              </Col>
+              <Col {...COL_ITEM_LAYOUT_HALF2}>
+                <Row>
+                  <Col {...COL_COL_ITEM_LAYOUT_RIGHT2}>
+                    <Item label={"Nơi công tác"} {...ITEM_LAYOUT_HALF2}>
+                      {getFieldDecorator('CoQuanID', {
+                        initialValue: dataEdit.CoQuanID ? dataEdit.CoQuanID : undefined,
+                        rules: [{...REQUIRED}]
+                      })
+                      (
+                        <TreeSelect
+                          showSearch
+                          treeData={DanhSachCoQuan}
+                          dropdownStyle={{maxHeight: 400, overflow: 'auto'}}
+                          placeholder="Chọn cơ quan"
+                          allowClear
+                          treeDefaultExpandAll
+                          notFoundContent={"Không có dữ liệu"}
+                          treeNodeFilterProp={'title'}
+                          onChange={value => this.changeCoQuan(value)}
+                        />
+                      )
+                      }
+                    </Item>
+                  </Col>
+                </Row>
+              </Col>
+            </Row>
+            <Row>
+              <Col {...COL_ITEM_LAYOUT_HALF2}>
+                <Item label={"Phân quyền"} {...ITEM_LAYOUT_HALF2}>
+                  {getFieldDecorator('ListNhomNguoiDungID', {
+                    initialValue: dataEdit.ListNhomNguoiDungID ? dataEdit.ListNhomNguoiDungID : undefined
+                  })
+                  (<Select allowClear={true} notFoundContent={"Không có dữ liệu"}
+                           placeholder={"Chọn nhóm người dùng"} showSearch
+                           optionFilterProp={'label'} mode={'multiple'}>
+                    {DanhSachNhomNguoiDung.map((e) => {
+                      return (<Option
+                        value={e.NhomNguoiDungID} label={e.TenNhom}>{e.TenNhom}</Option>);
+                    })}
+                  </Select>)
+                  }
+                </Item>
+              </Col>
+            </Row>
+          </Form>
+        </Modal>
+      );
+    }
+  },
+);
+export {ModalAddEdit}

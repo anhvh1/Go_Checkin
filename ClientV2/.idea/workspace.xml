@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="3e550b09-2035-4f66-8037-127a109cc577" name="Default Changelist" comment="" />
+    <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="TypeScript File" />
+        <option value="CSS File" />
+        <option value="JavaScript File" />
+      </list>
+    </option>
+  </component>
+  <component name="ProjectId" id="1wFjlucAbFza2tvtI4sluyffesu" />
+  <component name="PropertiesComponent">
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/src/customApp/containers" />
+    <property name="list.type.of.created.stylesheet" value="CSS" />
+    <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
+    <property name="nodejs_npm_path_reset_for_default_project" value="true" />
+    <property name="nodejs_package_manager_path" value="yarn" />
+    <property name="settings.editor.selected.configurable" value="Errors" />
+    <property name="ts.external.directory.path" value="C:\Program Files\JetBrains\WebStorm 2019.2.3\plugins\JavaScriptLanguage\jsLanguageServicesImpl\external" />
+  </component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="F:\InOut\ClientV2\src\customApp\containers\DMCoQuan\" />
+    </key>
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="F:\InOut\ClientV2\src\customApp\containers" />
+      <recent name="F:\InOut\ClientV2\src\customApp\redux" />
+      <recent name="F:\InOut\ClientV2\src\customApp\containers\LandingPage" />
+    </key>
+  </component>
+  <component name="RunDashboard">
+    <option name="ruleStates">
+      <list>
+        <RuleState>
+          <option name="name" value="ConfigurationTypeDashboardGroupingRule" />
+        </RuleState>
+        <RuleState>
+          <option name="name" value="StatusDashboardGroupingRule" />
+        </RuleState>
+      </list>
+    </option>
+  </component>
+  <component name="SvnConfiguration">
+    <configuration>C:\Users\GoSol\AppData\Roaming\Subversion</configuration>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="3e550b09-2035-4f66-8037-127a109cc577" name="Default Changelist" comment="" />
+      <created>1628061384850</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1628061384850</updated>
+      <workItem from="1628061386168" duration="145196000" />
+      <workItem from="1628686498225" duration="70415000" />
+      <workItem from="1629887950541" duration="2573000" />
+      <workItem from="1629976131489" duration="4616000" />
+      <workItem from="1630404276002" duration="46000" />
+      <workItem from="1630405192789" duration="622000" />
+      <workItem from="1630895240445" duration="6406000" />
+      <workItem from="1631000972828" duration="677000" />
+      <workItem from="1631005764077" duration="619000" />
+      <workItem from="1631775332773" duration="2502000" />
+      <workItem from="1631846104828" duration="1788000" />
+      <workItem from="1632295868512" duration="648000" />
+      <workItem from="1634101482482" duration="855000" />
+      <workItem from="1634263553260" duration="22896000" />
+      <workItem from="1634549528421" duration="37433000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="1" />
+  </component>
+</project>

@@ -1,0 +1,442 @@
+import React, { Component } from "react";
+import { connect } from "react-redux";
+import queryString from "query-string";
+import actions from "../../redux/DMCoQuan/actions";
+import api from "./config";
+import apiCanBo from "../QLTaiKhoan/config";
+import Constants from "../../../settings/constants";
+
+import LayoutWrapper from "../../../components/utility/layoutWrapper";
+import PageHeader from "../../../components/utility/pageHeader";
+import PageAction from "../../../components/utility/pageAction";
+import Box from "../../../components/utility/box";
+import BoxFilter from "../../../components/utility/boxFilter";
+import { EmptyTable } from "../../../components/utility/boxTable";
+import ModalAddEdit from "./modalAddEdit";
+import { Modal, message, Input, Tree, Menu, Dropdown } from "antd";
+import Button from "../../../components/uielements/button";
+import { changeUrlFilter, getFilterData } from "../../../helpers/utility";
+import ModalQR from "./modalQRCode";
+import { DownOutlined, FileAddOutlined } from "@ant-design/icons";
+
+const { TreeNode } = Tree;
+
+class DMCoQuan extends Component {
+  constructor(props) {
+    super(props);
+    document.title = "Danh mục cơ quan đơn vị";
+    const filterData = queryString.parse(this.props.location.search);
+    this.state = {
+      expandedKeys: [],
+      filterData: { ...filterData },
+      treeKey: 0,
+      modalKey: 0,
+      DanhSachCoQuan: [],
+      loading: false,
+      visibleModalAddEdit: false,
+      dataModalAddEdit: null,
+      action: "add",
+      visibleModalQR: false,
+      CoQuanQR: null,
+      CoQuanEdit: null,
+    };
+  }
+
+  //Get initData---------------------------------------------
+  componentDidMount = () => {
+    this.props.getInitData(this.state.filterData);
+  };
+
+  componentDidUpdate(prevProps, prevState, snapshot) {
+    if (prevProps.DanhSachCoQuan !== this.props.DanhSachCoQuan) {
+      let treeKey = this.state.treeKey + 1;
+      this.setState({
+        DanhSachCoQuan: this.props.DanhSachCoQuan,
+        expandedKeys: this.props.expandedKeys,
+        treeKey,
+      });
+    }
+  }
+
+  //filter --------------------------------------------------
+  onFilter = (value, property) => {
+    //get filter data
+    let oldFilterData = { ...this.state.filterData };
+    let onFilter = { value, property };
+    let filterData = getFilterData(oldFilterData, onFilter, null);
+    //get filter data
+    this.setState({ filterData }, () => {
+      let Keyword = this.state.filterData.Keyword
+        ? this.state.filterData.Keyword
+        : "";
+      changeUrlFilter({ Keyword }); //change url
+      this.props.getList(this.state.filterData); //get list
+    });
+  };
+
+  //Delete-----------------------------------------------------
+  deleteData = (ID) => {
+    if (!this.props.role.delete) {
+      message.destroy();
+      message.warning("Bạn không có quyền thực hiện chức năng này");
+    } else {
+      Modal.confirm({
+        title: "Xóa dữ liệu",
+        content: "Bạn có muốn xóa cơ quan đơn vị này không?",
+        cancelText: "Không",
+        okText: "Có",
+        onOk: () => {
+          api
+            .xoaCoQuan({ ListID: [ID] })
+            .then((response) => {
+              if (response.data.Status > 0) {
+                //reset tree
+                this.props.getList(this.state.filterData); //get list
+                //message success
+                message.destroy();
+                message.success("Xóa thành công");
+              } else {
+                message.destroy();
+                message.error(response.data.Message);
+              }
+            })
+            .catch((error) => {
+              message.destroy();
+              message.error(error.toString());
+            });
+        },
+      });
+    }
+  };
+
+  //Modal add -----------------------------------------------------
+  showModalAdd = (CoQuanChaID, TenCoQuanCha) => {
+    if (!this.props.role.add) {
+      message.destroy();
+      message.warning("Bạn không có quyền thực hiện chức năng này");
+    } else {
+      let modalKey = this.state.modalKey + 1;
+      this.setState({
+        visibleModalAddEdit: true,
+        dataModalAddEdit: {
+          DanhSachTinh: [...this.props.DanhSachDiaGioi],
+          Data: { CoQuanChaID, TenCoQuanCha },
+        },
+        loading: false,
+        modalKey,
+        action: "add",
+      });
+    }
+  };
+
+  hideModalAddEdit = () => {
+    this.setState({
+      visibleModalAddEdit: false,
+      dataModalAddEdit: null,
+    });
+  };
+
+  submitModalAddEdit = (data) => {
+    const { action } = this.state;
+    if (action === "add") {
+      this.setState({ loading: true }, () => {
+        api
+          .themCoQuan(data)
+          .then((response) => {
+            this.setState({ loading: false });
+            if (response.data.Status > 0) {
+              //message success
+              message.destroy();
+              message.success("Thêm thành công");
+              //hide modal
+              this.hideModalAddEdit();
+              this.props.getList(this.state.filterData); //get list
+            } else {
+              message.destroy();
+              message.error(response.data.Message);
+            }
+          })
+          .catch((error) => {
+            this.setState({ loading: false });
+            message.destroy();
+            message.error(error.toString());
+          });
+      });
+    } else if (action === "edit") {
+      this.setState({ loading: true }, () => {
+        api
+          .suaCoQuan(data)
+          .then((response) => {
+            this.setState({ loading: false });
+            if (response.data.Status > 0) {
+              //message success
+              message.destroy();
+              message.success("Cập nhật thành công");
+              //hide modal
+              this.hideModalAddEdit();
+              this.props.getList(this.state.filterData); //get list
+            } else {
+              message.destroy();
+              message.error(response.data.Message);
+            }
+          })
+          .catch((error) => {
+            this.setState({ loading: false });
+            message.destroy();
+            message.error(error.toString());
+          });
+      });
+    }
+  };
+  //Modal edit -----------------------------------------------------
+  showModalEdit = (CoQuanID) => {
+    if (!this.props.role.edit) {
+      message.destroy();
+      message.warning("Bạn không có quyền thực hiện chức năng này");
+    } else {
+      api
+        .chiTietCoQuan({ CoQuanID })
+        .then((response) => {
+          if (response.data.Status > 0) {
+            let modalKey = this.state.modalKey + 1;
+            let Data = response.data.Data;
+            this.setState({
+              visibleModalAddEdit: true,
+              dataModalAddEdit: {
+                DanhSachTinh: [...this.props.DanhSachDiaGioi],
+                Data,
+              },
+              loading: false,
+              modalKey,
+              action: "edit",
+            });
+          } else {
+            message.destroy();
+            message.error(response.data.Message);
+          }
+        })
+        .catch((error) => {
+          message.destroy();
+          message.error(error.toString());
+        });
+    }
+  };
+  //Tree -------------------------------------------------------------
+  onExpandNode = (selectedKeys, info) => {
+    let className = info.nativeEvent.target.outerHTML.toString();
+    let parentClassName =
+      info.nativeEvent.target.parentElement.className.toString();
+    let checkMenu = className.includes("ant-dropdown-menu");
+    let checkNearMenu = parentClassName.includes("ant-dropdown-menu");
+    if (!checkMenu && !checkNearMenu) {
+      //neu dang k click menu drop
+      let key = info.node.props.eventKey.toString();
+      if (key) {
+        if (!info.node.props.isLeaf) {
+          let expandedKeys = [...this.state.expandedKeys];
+          let index = expandedKeys.indexOf(key);
+          if (index > -1) {
+            expandedKeys.splice(index, 1);
+          } else {
+            expandedKeys = this.state.expandedKeys.concat([key]);
+          }
+          this.setState({ expandedKeys });
+        }
+      }
+    }
+  };
+
+  renderTreeNodes = (data) =>
+    data.map((item) => {
+      const user_id = parseInt(localStorage.getItem("user_id"));
+      let menu = (
+        <Menu>
+          {item.key.split("-").length < 3 ? ( //if Cap = 1 or 2
+            <Menu.Item
+              onClick={() => this.showModalAdd(item.ID, item.Ten, item.Cap)}
+            >
+              <span>Thêm đơn vị</span>
+            </Menu.Item>
+          ) : null}
+          <Menu.Item onClick={() => this.showModalEdit(item.ID)}>
+            <span>Sửa</span>
+          </Menu.Item>
+          <Menu.Item
+            onClick={() => this.deleteData(item.ID)}
+            disabled={item.Cap === 1 && user_id !== 1}
+          >
+            <span>Xóa</span>
+          </Menu.Item>
+          {!item.CoQuanChaID ? (
+            <Menu.Item onClick={() => this.showModalQR(item)}>
+              <span>Xem mã checkin</span>
+            </Menu.Item>
+          ) : (
+            ""
+          )}
+        </Menu>
+      );
+      let title =
+        1 === 1 ? (
+          <div>
+            <Dropdown
+              overlay={menu}
+              placement="bottomLeft"
+              trigger={["contextMenu"]}
+            >
+              <span>{item.title}</span>
+            </Dropdown>
+          </div>
+        ) : (
+          <div>
+            <Dropdown
+              overlay={menu}
+              placement="bottomLeft"
+              trigger={["contextMenu"]}
+            >
+              <b>{item.title}</b>
+            </Dropdown>
+          </div>
+        );
+      if (item.children) {
+        return (
+          <TreeNode
+            title={title}
+            key={item.key}
+            isLeaf={item.isLeaf}
+            children={item.children}
+            dataRef={item}
+          >
+            {this.renderTreeNodes(item.children)}
+          </TreeNode>
+        );
+      }
+      return (
+        <TreeNode
+          title={title}
+          key={item.key}
+          isLeaf={item.isLeaf}
+          children={item.children}
+          dataRef={item}
+        />
+      );
+    });
+
+  renderContent = () => {
+    if (this.state.DanhSachCoQuan.length) {
+      return (
+        <Tree
+          showLine
+          switcherIcon={<DownOutlined />}
+          filterTreeNode={(treeNode) => treeNode.props.dataRef.Highlight === 1}
+          expandedKeys={this.state.expandedKeys}
+          onSelect={this.onExpandNode}
+          onExpand={this.onExpandNode}
+        >
+          {this.renderTreeNodes(this.state.DanhSachCoQuan)}
+        </Tree>
+      );
+    } else {
+      return (
+        <EmptyTable
+          style={{
+            position: "absolute",
+            top: "45%",
+            left: "48%",
+            border: "none",
+          }}
+          loading={this.props.TableLoading}
+        />
+      );
+    }
+  };
+
+  showModalQR = (item) => {
+    api
+      .chiTietCoQuan({ CoQuanID: item.CoQuanID })
+      .then((response) => {
+        if (response.data.Status > 0) {
+          let { modalKey } = this.state;
+          modalKey++;
+          const CoQuanQR = response.data.Data;
+          this.setState({
+            modalKey,
+            CoQuanQR,
+            visibleModalQR: true,
+          });
+        } else {
+          message.destroy();
+          message.error(response.data.Message);
+        }
+      })
+      .catch((error) => {
+        message.destroy();
+        message.error(error.toString());
+      });
+  };
+
+  closeModalQR = () => {
+    this.setState({ visibleModalQR: false });
+  };
+
+  //Render ----------------------------------------------------
+  render() {
+    const { role, user_id } = this.props;
+    const { modalKey, visibleModalQR, CoQuanQR } = this.state;
+    const { loading, visibleModalAddEdit, dataModalAddEdit } = this.state;
+    return (
+      <LayoutWrapper>
+        <PageHeader>Danh mục cơ quan, đơn vị</PageHeader>
+        <PageAction>
+          {user_id === 1 && role.add ? (
+            <Button
+              type="primary"
+              onClick={() => this.showModalAdd("", "", "")}
+            >
+              <FileAddOutlined />
+              Thêm
+            </Button>
+          ) : (
+            ""
+          )}
+        </PageAction>
+        <Box style={{ minHeight: "calc(100vh - 265px)" }}>
+          <BoxFilter>
+            <Input.Search
+              allowClear={true}
+              defaultValue={this.state.filterData.Keyword}
+              placeholder="Tìm kiếm theo tên cơ quan, đơn vị"
+              onSearch={(value) => this.onFilter(value, "Keyword")}
+              style={{ width: 300 }}
+            />
+          </BoxFilter>
+          <div key={this.state.treeKey} style={{ userSelect: "none" }}>
+            {this.renderContent()}
+          </div>
+        </Box>
+        <ModalAddEdit
+          loading={loading}
+          visible={visibleModalAddEdit}
+          onCancel={this.hideModalAddEdit}
+          onCreate={this.submitModalAddEdit}
+          dataModal={dataModalAddEdit}
+          key={modalKey}
+        />
+        <ModalQR
+          key={modalKey}
+          visible={visibleModalQR}
+          CoQuanQR={CoQuanQR}
+          onCancel={this.closeModalQR}
+        />
+      </LayoutWrapper>
+    );
+  }
+}
+
+function mapStateToProps(state) {
+  return {
+    ...state.DMCoQuan,
+  };
+}
+
+export default connect(mapStateToProps, actions)(DMCoQuan);

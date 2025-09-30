@@ -1,0 +1,386 @@
+import React, { Component } from "react";
+import { connect } from "react-redux";
+import Webcam from "react-webcam";
+import Styled from "./styled";
+import queryString from "query-string";
+import actions from "../../redux/CheckinOutGuest/actions";
+import {
+  changeUrlFilter,
+  checkIsMobile,
+  socketConnect,
+} from "../../../helpers/utility";
+import { message, Button } from "antd";
+import api from "./config";
+import moment from "moment";
+import ModalCheckin from "./modalCheckin";
+import ModalCheckinSuccess from "./modalCheckinSuccess";
+import { CameraOutlined, SyncOutlined } from "@ant-design/icons";
+// import { v4 as uuidv4 } from "uuid";
+
+class GuestCheckin extends Component {
+  constructor(props) {
+    super(props);
+    document.title = "Checkin";
+    this.webcamRef = React.createRef();
+    const filterData = queryString.parse(this.props.location.search);
+    this.socketIO = null;
+    this.state = {
+      filterData: filterData,
+      imageCMTTruoc: "",
+      imageCMTSau: "",
+      imageChanDung: "",
+      videoInput: [],
+      indexCamera: 0,
+      step: 1,
+      recognition: false,
+      modalKey: 1,
+      visibleModalCheckin: false,
+      dataCMT: {},
+      validCheckin: false,
+      isCheckOut: false,
+      visibleModalSuccess: false,
+      dataCheckin: {},
+      modalKeySuccess: 0,
+      fromQRCode: false,
+      sessionCode: "",
+      dataSocket: null,
+    };
+  }
+
+  componentDidMount() {
+    this.props.getInitData(this.state.filterData);
+    this.getCamera();
+    //
+    const { filterData } = this.state;
+    const ThongTinVaoRaID = filterData.c;
+    if (ThongTinVaoRaID) {
+      this.checkOutQRCode(ThongTinVaoRaID);
+    }
+    //
+    this.socketIO && this.socketIO.stop();
+    this.socketIO = socketConnect();
+    this.socketIO.start();
+    this.socketIO.on("scan", (data) => {
+      this.getDataCheckinSuccess(data);
+      // this.changeDataItems(data);
+    });
+    //
+    this.setSessionCode();
+  }
+
+  componentWillUnmount() {
+    this.socketIO.stop();
+  }
+
+  setSessionCode = () => {
+    const random = () => Math.random(10000000000000000000);
+    this.setState({
+      sessionCode: `${random()} ${random()} ${random()} ${random()} ${random()} ${random()} ${random()}`,
+    });
+  };
+
+  getDataCheckinSuccess = (data) => {
+    const { sessionCode } = this.state;
+    if (data.sessionCode === sessionCode) {
+      //
+      const dataCheckinSuccess = {
+        ...data,
+        HoVaTen: data.hoVaTen,
+        TenDonViSuDung: data.tenDonViSuDung,
+        GioVao: data.gioVao,
+        QRCode: data.qrCode,
+        ThongTinVaoRaID: data.thongTinVaoRaID,
+      };
+      this.CheckInSuccess(dataCheckinSuccess);
+    }
+  };
+
+  checkOutQRCode = (ThongTinVaoRaID) => {
+    api
+      .GetByID({ ThongTinVaoRaID })
+      .then((response) => {
+        if (response.data.Status > 0) {
+          const dataCMT = response.data.Data;
+          dataCMT.GapCanBo = `${dataCMT.GapCanBo}_${dataCMT.DonViCaNhan}`;
+          this.setState({ dataCMT, isCheckOut: true, fromQRCode: true });
+          this.openModalCheckin();
+        } else {
+          message.destroy();
+          message.error("Không lấy được thông tin checkin");
+        }
+      })
+      .catch((error) => {
+        message.destroy();
+        message.error(error.toString());
+      });
+  };
+
+  getCamera = async () => {
+    if (navigator.getUserMedia) {
+      navigator.mediaDevices
+        .enumerateDevices()
+        .then((devices) => {
+          const videoInput = devices.filter(
+            (device) => device.kind === "videoinput"
+          );
+          if (videoInput.length) {
+            this.setState({ videoInput });
+          }
+        })
+        .catch((error) => {
+          message.error(error.toString());
+        });
+    }
+  };
+
+  captureCamera = () => {
+    const imageCMTTruoc = this.webcamRef.current.getScreenshot();
+    this.setState({ imageCMTTruoc, recognition: true }, () => {
+      api
+        .ScanImage({ image: imageCMTTruoc })
+        .then((response) => {
+          this.setState({ recognition: false });
+          if (response.data.result_code === 200) {
+            this.fillData(response.data, imageCMTTruoc);
+          } else if (response.data.result_code === 500) {
+            message.destroy();
+            message.error("Ảnh CMND mặt trước không hợp lệ");
+          } else {
+            message.destroy();
+            message.error(response.data.result_message);
+          }
+        })
+        .catch((error) => {
+          this.setState({ recognition: false });
+          message.destroy();
+          message.error(error.toString());
+        });
+    });
+  };
+
+  switchCamera = () => {
+    let { indexCamera } = this.state;
+    const { videoInput } = this.state;
+    const numberOfCamera = videoInput.length;
+    if (indexCamera < numberOfCamera - 1) {
+      indexCamera++;
+    } else {
+      indexCamera = 0;
+    }
+    this.setState({ indexCamera });
+  };
+
+  fillData = (data, AnhCMND_MTBase64) => {
+    const { dataCMT, sessionCode, filterData } = this.state;
+    dataCMT.HoVaTen = data.name !== "N/A" ? data.name : "";
+    dataCMT.NgaySinh =
+      data.birthday !== "N/A" ? moment(data.birthday, "DD-MM-YYYY") : "";
+    dataCMT.HoKhau = data.address !== "N/A" ? data.address : "";
+    dataCMT.SoCMND = data.id !== "N/A" ? data.id : "";
+    dataCMT.NoiCapCMND = data.issue_by !== "N/A" ? data.issue_by : "";
+    dataCMT.NgayCapCMND =
+      data.issue_date !== "N/A" ? moment(data.issue_date, "DD-MM-YYYY") : "";
+    dataCMT.GioiTinh = data.sex !== "N/A" ? data.sex : undefined;
+    dataCMT.LoaiGiayTo = data.document !== "N/A" ? data.document : "";
+    //
+    const dataSocket = {
+      ...dataCMT,
+      NgayCapCMND: dataCMT.NgayCapCMND
+        ? moment(dataCMT.NgayCapCMND).format("YYYY-MM-DD")
+        : null,
+      NgaySinh: dataCMT.NgaySinh
+        ? moment(dataCMT.NgaySinh).format("YYYY-MM-DD")
+        : null,
+      sessionCode,
+      CoQuanSuDungPhanMem: filterData.q ? parseInt(filterData.q) : 0,
+      AnhCMND_MTBase64,
+    };
+    // console.log(dataSocket);
+    if (this.socketIO.connectionState === "Connected") {
+      // this.socketIO.invoke('scan', dataSocket);
+    }
+    this.setState({ dataCMT, validCheckin: true, dataSocket }, () => {
+      this.openModalCheckin();
+    });
+  };
+
+  openModalCheckin = () => {
+    let { modalKey } = this.state;
+    modalKey++;
+    this.setState({ modalKey, visibleModalCheckin: true });
+  };
+
+  closeModal = (isCheckOut, resetData = false) => {
+    this.setState({ visibleModalCheckin: false, isCheckOut }, () => {
+      if (resetData) {
+        this.setState({
+          dataCMT: {},
+          imageCMTTruoc: "",
+          validCheckin: false,
+          isCheckOut: false,
+        });
+      }
+    });
+  };
+
+  CheckInSuccess = (dataCheckin) => {
+    this.closeModal(false, true);
+    //
+    let { modalKeySuccess } = this.state;
+    modalKeySuccess++;
+    this.setState({ modalKeySuccess, visibleModalSuccess: true, dataCheckin });
+  };
+
+  closeModalSuccess = () => {
+    this.setState({ visibleModalSuccess: false, dataCheckin: {} }, () => {
+      this.props.history.push("/dashboard");
+    });
+  };
+
+  CheckOut = () => {
+    const { dataCheckin } = this.state;
+    api
+      .Checkout({ ThongTinVaoRaID: dataCheckin.ThongTinVaoRaID })
+      .then((response) => {
+        if (response.data.Status > 0) {
+          message.success("Checkout thành công");
+          this.closeModalSuccess();
+        }
+      });
+  };
+
+  render() {
+    const {
+      videoInput,
+      indexCamera,
+      recognition,
+      imageCMTTruoc,
+      validCheckin,
+      filterData,
+      isCheckOut,
+    } = this.state;
+    const { visibleModalSuccess, dataCheckin } = this.state;
+    const {
+      visibleModalCheckin,
+      dataCMT,
+      modalKey,
+      modalKeySuccess,
+      fromQRCode,
+      sessionCode,
+      dataSocket,
+    } = this.state;
+    const { appHeight, appWidth, DoiTuongGap } = this.props;
+    let deviceCamera = videoInput.length ? videoInput[indexCamera] : null;
+    const cameraCapabilities =
+      (deviceCamera && deviceCamera.getCapabilities()) || null;
+    const isMobile = checkIsMobile();
+    const resolution = {
+      width:
+        cameraCapabilities && cameraCapabilities.width
+          ? cameraCapabilities.width.max
+          : 800,
+      height:
+        cameraCapabilities && cameraCapabilities.height
+          ? cameraCapabilities.height.max
+          : 600,
+    };
+    let zoom = 1;
+    if (isMobile) {
+      zoom =
+        resolution.height < appHeight
+          ? resolution.height / appHeight
+          : appHeight / resolution.height;
+    }
+    const resolutionOfDiv = {
+      width: isMobile ? resolution.width * zoom : appWidth,
+      height: appHeight,
+      maxWidth: "100%",
+      maxHeight: "100%",
+    };
+    const frame = {
+      width: isMobile ? "90%" : 400,
+      height: 300,
+      maxWidth: "90%",
+    };
+    //
+    const CoQuanID = filterData.q ? filterData.q : null;
+    if (!CoQuanID) {
+      return null;
+    }
+    return (
+      <Styled className={"index"}>
+        {!visibleModalCheckin ? (
+          <div className={"huong-dan"}>
+            Vui lòng chụp mặt trước CMND/CCCD để checkin
+          </div>
+        ) : (
+          ""
+        )}
+        <div className={"camera-container"} style={{ ...resolutionOfDiv }}>
+          <Webcam
+            audio={false}
+            id={"capture-camera"}
+            ref={this.webcamRef}
+            screenshotQuality={0.9}
+            screenshotFormat="image/jpeg"
+            videoConstraints={{
+              deviceId: deviceCamera ? deviceCamera.deviceId : "",
+              facingMode: isMobile ? { exact: "environment" } : {},
+              ...resolutionOfDiv,
+            }}
+          />
+          {!recognition ? (
+            <div className={"frame-camera"} style={{ ...frame }} />
+          ) : (
+            ""
+          )}
+          {recognition ? (
+            <div className={"loading"}>
+              Đang quét giấy tờ tùy thân. Vui lòng đợi trong giây lát
+            </div>
+          ) : (
+            ""
+          )}
+        </div>
+        <div className={"action"}>
+          <CameraOutlined onClick={this.captureCamera} />
+          {isMobile ? "" : <SyncOutlined onClick={this.switchCamera} />}
+          {/*{validCheckin && !visibleModalCheckin ?*/}
+          {/*  <Button type={'primary'} onClick={this.openModalCheckin}>{isCheckOut ? 'Checkout' : 'Checkin'}</Button> :*/}
+          {/*  <Button type={'primary'} onClick={this.openModalCheckin}>Nhập thông tin</Button>}*/}
+        </div>
+        <ModalCheckin
+          key={modalKey}
+          visible={visibleModalCheckin}
+          dataModal={dataCMT}
+          DoiTuongGap={DoiTuongGap}
+          CoQuanID={CoQuanID}
+          CheckInSuccess={this.CheckInSuccess}
+          fromQRCode={fromQRCode}
+          dataSocket={dataSocket}
+          imageCMTTruoc={imageCMTTruoc}
+          onCancel={this.closeModal}
+          sessionCode={sessionCode}
+          socketIO={this.socketIO}
+        />
+        <ModalCheckinSuccess
+          key={modalKeySuccess}
+          visible={visibleModalSuccess}
+          dataCheckin={dataCheckin}
+          CheckOut={this.CheckOut}
+          onCancel={this.closeModalSuccess}
+        />
+      </Styled>
+    );
+  }
+}
+
+function mapStateToProps(state) {
+  return {
+    ...state.Guest,
+    appHeight: state.App.height,
+    appWidth: state.App.width,
+  };
+}
+
+export default connect(mapStateToProps, actions)(GuestCheckin);

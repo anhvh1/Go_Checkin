@@ -1,0 +1,331 @@
+import React, {Component} from 'react';
+import Constants, {MODAL_NORMAL, REQUIRED} from '../../../settings/constants';
+import {Form, Row, Col, message, Icon} from 'antd';
+import {Select, Option, Modal, Input, Button} from "../../../components/uielements/exportComponent";
+import api from "./config"
+import {ModalWrapper} from "./landingLogin.styled";
+import {printComponent} from "../../../helpers/utility";
+
+const {Item} = Form;
+
+export default Form.create({name: 'modal_reg'})(
+  class extends Component {
+    constructor(props) {
+      super(props);
+      this.printRef = React.createRef();
+      this.canvasRef = React.createRef();
+      this.state = {
+        DanhSachHuyen: [],
+        DanhSachXa: [],
+        step: 1,
+        ThongTinDangKy: {},
+        ThongTinDangKyThanhCong: {},
+        capcha: "",
+        srcCapcha: "",
+        capchaInput: ""
+      };
+    }
+
+    onOk = (e) => {
+      e.preventDefault();
+      this.props.form.validateFields((err, value) => {
+        if (!err) {
+          value.TenCanBo = this.upperFirstLetter(value.TenCanBo);
+          this.setState({ThongTinDangKy: value});
+          let {step} = this.state;
+          if (step === 1) {
+            this.RegCapCha();
+            step = 2;
+            this.setState({step});
+          } else if (step === 2) {
+            const {capcha, capchaInput} = this.state;
+            if (capcha !== capchaInput) {
+              message.destroy();
+              message.warn('Mã xác thực nhập không chính xác, vui lòng thử lại');
+              this.RegCapCha();
+              return;
+            }
+            api.DangKyTaiKhoan(value).then(response => {
+              this.setState({loading: false});
+              if (response.data.Status > 0) {
+                const ThongTinDangKyThanhCong = response.data.Data;
+                this.setState({ThongTinDangKyThanhCong, step: 3});
+              } else {
+                message.destroy();
+                message.error(response.data.Message);
+              }
+            }).catch(error => {
+              message.destroy();
+              message.error(error.toString());
+            })
+          } else if (step === 3) {
+            printComponent(this.printRef.current.innerHTML);
+          }
+          // const {onCreate} = this.props;
+          // onCreate(value);
+        }
+      });
+    };
+
+    onCancel = () => {
+      let {step} = this.state;
+      if (step === 2) {
+        step--;
+        this.setState({step})
+      } else {
+        this.props.onCancel();
+      }
+    };
+
+    upperFirstLetter = (word) => {
+      word = word.trim();
+      let text = word.split(' ');
+      let res = [];
+      for (let i = 0; i < text.length; i++) {
+        let text2 = text[i].split('');
+        text2[0] = text2[0].toUpperCase();
+        text2 = text2.join('');
+        res[res.length] = text2;
+      }
+      return res.join(' ');
+    };
+
+    onChangeTinh = (TinhID) => {
+      if (TinhID) {
+        api.danhSachDiaGioi({ID: TinhID, Cap: Constants.HUYEN,}).then(response => {
+          if (response.data.Status > 0) {
+            this.setState({DanhSachHuyen: response.data.Data, DanhSachXa: []}, () => {
+              this.props.form.setFieldsValue({HuyenID: undefined, XaID: undefined});
+            });
+          } else {
+            message.destroy();
+            message.error(response.data.Message);
+          }
+        }).catch(error => {
+          message.destroy();
+          message.error(error.toString());
+        });
+      } else {
+        this.setState({DanhSachHuyen: [], DanhSachXa: []}, () => {
+          this.props.form.setFieldsValue({HuyenID: undefined, XaID: undefined});
+        });
+      }
+    };
+
+    onChangeHuyen = (HuyenID) => {
+      if (HuyenID) {
+        api.danhSachDiaGioi({ID: HuyenID, Cap: Constants.XA,}).then(response => {
+          if (response.data.Status > 0) {
+            this.setState({DanhSachXa: response.data.Data}, () => {
+              this.props.form.setFieldsValue({XaID: undefined});
+            });
+          } else {
+            message.destroy();
+            message.error(response.data.Message);
+          }
+        }).catch(error => {
+          message.destroy();
+          message.error(error.toString());
+        });
+      } else {
+        this.setState({DanhSachXa: []}, () => {
+          this.props.form.setFieldsValue({XaID: undefined});
+        });
+      }
+    };
+
+    inputNum = (e) => {
+      const key = e.charCode;
+      if (key < 48 || key > 57) {
+        e.preventDefault();
+      }
+    };
+
+    renderContentButtonPrimary = () => {
+      const {step} = this.state;
+      return step === 1 ? "Tiếp" : step === 2 ? "Xác nhận & Đăng ký" : "In";
+    };
+
+    renderContentButtonSecondary = () => {
+      const {step} = this.state;
+      return step === 2 ? "Quay lại" : "Đóng";
+    };
+
+    renderDiaChiFull = (ThongTinDangKy) => {
+      const {DanhSachTinh} = this.props;
+      const {DanhSachHuyen, DanhSachXa} = this.state;
+      const tinh = DanhSachTinh.find(item => item.ID === ThongTinDangKy.TinhID);
+      const huyen = DanhSachHuyen.find(item => item.ID === ThongTinDangKy.HuyenID);
+      const xa = DanhSachXa.find(item => item.ID === ThongTinDangKy.XaID);
+      if (tinh && huyen && xa) {
+        return `${ThongTinDangKy.DiaChi ? ThongTinDangKy.DiaChi + ", " : ""}${xa.Ten}, ${huyen.Ten}, ${tinh.Ten}`;
+      }
+    };
+
+    RegCapCha = () => {
+      let capcha = "";
+      const capchaLength = 6;
+      for (let i = 0; i < capchaLength; i++) {
+        let letter = 0;
+        let numorchar = Math.floor(Math.random() * (3));
+        if (numorchar === 1 || numorchar === 2) {
+          letter = Math.floor(Math.random() * (91 - 65)) + 65;
+        }
+        if (numorchar === 0) {
+          letter = Math.floor(Math.random() * (58 - 48)) + 48;
+        }
+        letter = String.fromCharCode(letter);
+        let uporlow = Math.floor(Math.random() * 2);
+        if (uporlow === 1) {
+          letter = letter.toString().toLowerCase();
+        } else {
+          letter = letter.toString();
+        }
+        capcha += letter;
+      }
+      const tCtx = this.canvasRef.current.getContext('2d');
+      tCtx.canvas.width = tCtx.measureText(capcha).width + 5;
+      tCtx.canvas.height = 10;
+      tCtx.fillText(capcha, 0, 7);
+      const srcCapcha = tCtx.canvas.toDataURL();
+      this.setState({capcha, srcCapcha, capchaInput: ""});
+    };
+
+    changeCapchaInput = (e) => {
+      this.setState({capchaInput: e.target.value});
+    };
+
+    DangNhap = () => {
+      const {ThongTinDangKyThanhCong} = this.state;
+      this.props.DangNhap(ThongTinDangKyThanhCong.Email);
+    };
+
+    render() {
+      const {visible, onCancel, form, loading, DanhSachTinh, MatKhau_MacDinh} = this.props;
+      const {DanhSachHuyen, DanhSachXa, step, ThongTinDangKy, ThongTinDangKyThanhCong, srcCapcha, capchaInput, capcha} = this.state;
+      const {getFieldDecorator} = form;
+      const FORMLAYOUT = {wrapperCol: 24};
+      return (
+        <Modal
+          title={'Đăng ký quản lý thông tin vào ra cơ quan sử dụng QR Code'}
+          width={MODAL_NORMAL}
+          visible={visible}
+          onCancel={onCancel}
+          footer={[
+            <Button onClick={this.onCancel} loading={loading}>{this.renderContentButtonSecondary()}</Button>,
+            <Button type="primary" form="fromdk"
+                    onClick={this.onOk} loading={loading}>{this.renderContentButtonPrimary()}</Button>,
+            step === 3 ? <Button type="primary" onClick={this.DangNhap} loading={loading}>Đăng nhập</Button> : ""
+
+          ]}
+        >
+          <ModalWrapper>
+            <Form id="fromdk" style={step !== 1 ? {display: 'none'} : {}}>
+              <Item {...FORMLAYOUT}>
+                {getFieldDecorator('TenCoQuan', {rules: [{...REQUIRED}]})
+                (<Input placeholder={'Tên cơ quan *'}/>)}
+              </Item>
+              <Row>
+                <Col span={8} style={{paddingRight: 10}}>
+                  <Item {...FORMLAYOUT}>
+                    {getFieldDecorator('TinhID', {rules: [{...REQUIRED}]})
+                    (
+                      <Select placeholder={'Tỉnh *'} onChange={this.onChangeTinh} showSearch>
+                        {DanhSachTinh.map(item => <Option value={item.ID}>{item.Ten}</Option>)}
+                      </Select>
+                    )}
+                  </Item>
+                </Col>
+                <Col span={8}>
+                  <Item {...FORMLAYOUT}>
+                    {getFieldDecorator('HuyenID', {rules: [{...REQUIRED}]})
+                    (<Select placeholder={'Huyện *'} onChange={this.onChangeHuyen} showSearch>
+                      {DanhSachHuyen.map(item => <Option value={item.ID}>{item.Ten}</Option>)}
+                    </Select>)}
+                  </Item>
+                </Col>
+                <Col span={8} style={{paddingLeft: 10}}>
+                  <Item {...FORMLAYOUT}>
+                    {getFieldDecorator('XaID', {rules: [{...REQUIRED}]})
+                    (<Select placeholder={'Xã *'} showSearch>
+                      {DanhSachXa.map(item => <Option value={item.ID}>{item.Ten}</Option>)}
+                    </Select>)}
+                  </Item>
+                </Col>
+              </Row>
+              <Item {...FORMLAYOUT}>
+                {getFieldDecorator('DiaChi')
+                (<Input placeholder={'Địa chỉ cơ quan'}/>)}
+              </Item>
+              <Item {...FORMLAYOUT}>
+                {getFieldDecorator('TenCanBo', {rules: [{...REQUIRED}]})
+                (<Input placeholder={'Họ và tên người đăng ký *'} style={{textTransform: "capitalize"}}/>)}
+              </Item>
+              <Item {...FORMLAYOUT}>
+                {getFieldDecorator('Email', {
+                  rules: [
+                    {...REQUIRED},
+                    {type: 'email', message: 'Email không đúng định dạng'}
+                  ]
+                })
+                (<Input placeholder={'Email liên hệ người đăng ký *'}/>)}
+              </Item>
+              <Item {...FORMLAYOUT}>
+                {getFieldDecorator('DienThoai', {rules: [{...REQUIRED}]})
+                (<Input placeholder={'Số điện thoại người đăng ký *'} maxLength={11} onKeyPress={this.inputNum}/>)}
+              </Item>
+            </Form>
+            <div style={step === 2 ? {} : {display: 'none'}} className={'confirm-info'}>
+              <div className={'big-row'}>Thông tin đăng ký sử dụng phần mềm</div>
+              <div className={'row'}>
+                <span className={'label'}>Cơ quan đăng ký</span>: {ThongTinDangKy.TenCoQuan}
+              </div>
+              <div className={'row'}>
+                <span className={'label'}>Địa chỉ đăng ký</span>: {this.renderDiaChiFull(ThongTinDangKy)}
+              </div>
+              <div className={'row'}>
+                <span className={'label'}>Họ và tên người đăng ký</span>: {ThongTinDangKy.TenCanBo}
+              </div>
+              <div className={'row'}>
+                <span className={'label'}>Email đăng ký</span>: {ThongTinDangKy.Email}
+              </div>
+              <div className={'row'}>
+                <span className={'label'}>Số điện thoại đăng ký</span>: {ThongTinDangKy.DienThoai}
+              </div>
+              <div className={'row'}>
+                <canvas ref={this.canvasRef} style={{display: 'none'}}/>
+                <img src={srcCapcha} className={'capcha-img'}/>
+                <Icon type={'reload'} onClick={this.RegCapCha} style={{fontSize: 18, marginLeft: 10}}/>
+              </div>
+              <div className={'row'}>
+                Mã xác thực: <Input style={{width: 100, marginLeft: 10}} value={capchaInput}
+                                    onChange={this.changeCapchaInput}/>
+              </div>
+            </div>
+            {step === 3 ? (
+              <div className={'reg-success'}>
+                <div className={'message-success'}>Đăng ký sử dụng thành công</div>
+                <div className={'big-row'}>Thông tin đăng nhập hệ thống</div>
+                <div className={'row'}>
+                  <span className={'label'}>Tài khoản đăng nhập</span>: {ThongTinDangKy.Email}
+                </div>
+                <div className={'row'}>
+                  <span className={'label'}>Mật khẩu</span>: {MatKhau_MacDinh}
+                </div>
+                <div className={'row center'}>
+                  <img src={ThongTinDangKyThanhCong.QRCode}/>
+                </div>
+              </div>
+            ) : ""}
+            <div ref={this.printRef} style={{display: 'none'}}>
+              <div style={{textAlign: "center"}}>
+                <img src={ThongTinDangKyThanhCong.QRCode} style={{margin: '20px 0', width: 400, height: 400}}/>
+                <div style={{fontWeight: "bold", fontSize: 30}}>{ThongTinDangKy.TenCoQuan}</div>
+              </div>
+            </div>
+          </ModalWrapper>
+        </Modal>
+      );
+    }
+  },
+);

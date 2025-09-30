@@ -1,0 +1,232 @@
+.isoSignInPage {
+    width: 100%;
+    min-height: 100vh;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    background: url("../../image/theme.png") 100% 100% no-repeat;
+    background-size: cover;
+    overflow: hidden;
+    font-family: serif;
+    /*min-width: 550px;*/
+    /*text-align: center;*/
+    padding-bottom: 100px;
+}
+
+.main-login {
+    background-color: rgb(255, 255, 255);
+    min-height: 280px;
+    width: 560px;
+    border: solid 1px #999;
+    border-radius: 10px;
+}
+
+.title-login {
+    width: 100%;
+    text-align: center;
+    font-weight: bold;
+    font-size: 35px;
+    position: fixed;
+    top: 180px;
+    color: #0000FF;
+}
+
+.login-input {
+    text-align: left;
+    width: 350px;
+    height: 160px;
+    border: solid 1px #999;
+    border-radius: 10px;
+    padding-left: 20px;
+    padding-top: 25px;
+    color: black;
+}
+
+.input-row {
+    display: flex;
+    margin: 10px 0;
+}
+
+.input-row .label-col {
+    width: 120px;
+    line-height: 32px;
+}
+
+.txtLogin {
+    width: 190px;
+}
+
+.btnLogin {
+    text-align: right;
+    margin-top: 10px;
+    padding-right: 18px;
+}
+
+.main-title {
+    width: 100%;
+    margin-top: 10px;
+    font-weight: bold;
+    font-size: 20pt;
+    text-align: center;
+}
+
+.main-body {
+    width: 100%;
+    margin-top: 20px;
+    text-align: center;
+    height: 155px;
+}
+
+.footer-login {
+    position: fixed;
+    bottom: 20px;
+    width: 100%;
+    text-align: center;
+    color: black;
+    font-size: 12px;
+    font-family: generic-family, serif;
+}
+
+.footer-main {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    text-align: center;
+    color: black;
+    font-size: 12px;
+    font-family: generic-family, serif;
+    background-color: #fff;
+    z-index: 999;
+    height: 25px;
+    padding-bottom: 5px;
+}
+
+.main-error {
+    padding-top: 20px;
+    text-align: center;
+    color: red;
+    font-style: italic;
+}
+
+
+h1, h2, h3, h4, h5, h6, button {
+    font-family: serif;
+    font-weight: 600 !important;
+}
+
+@media only screen and (max-width: 600px) {
+    .title-login {
+        font-size: 30px;
+    }
+}
+
+@media only screen and (max-width: 480px) {
+    .title-login {
+        font-size: 20px;
+    }
+}
+
+@media only screen and (max-height: 830px) {
+    .title-login {
+        top: 50px;
+    }
+}
+
+@media only screen and (max-height: 580px) {
+    .title-login {
+        top: 10px;
+    }
+}
+
+@media only screen and (max-height: 490px) {
+    .title-login {
+        display: none;
+    }
+}
+
+@media only screen and (max-height: 280px) {
+    .footer-login {
+        bottom: 10px;
+    }
+}
+
+@media only screen and (max-height: 250px) {
+    .footer-login {
+        display: none;
+    }
+}
+
+#colLock {
+    width: calc(100% / 3);
+    float: left;
+}
+
+#colInput {
+    width: calc(100% / 3 * 2);
+    float: right;
+}
+
+
+
+@media only screen and (max-width: 550px) {
+    #colLock {
+        display: none;
+    }
+
+    #colInput {
+        width: calc(100% / 3 * 2);
+        float: none;
+    }
+
+    .main-body {
+        padding: 0 100px;
+    }
+}
+
+@media only screen and (max-width: 340px) {
+    .login-input {
+        width: 320px;
+    }
+
+    .txtLogin {
+        width: 170px;
+    }
+
+
+}
+
+@media only screen and (max-width: 320px) {
+    .login-input {
+        width: 300px;
+    }
+
+    .txtLogin {
+        width: 150px;
+    }
+}
+
+@media only screen and (max-width: 300px) {
+    .login-input {
+        width: 280px;
+    }
+
+    .txtLogin {
+        width: 130px;
+    }
+}
+
+@media only screen and (max-width: 280px) {
+    .login-input {
+        width: 260px;
+    }
+
+    .txtLogin {
+        width: 110px;
+    }
+
+    .btnLogin {
+        text-align: center;
+    }
+}

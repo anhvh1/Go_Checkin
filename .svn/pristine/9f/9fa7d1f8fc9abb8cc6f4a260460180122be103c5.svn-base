@@ -1,0 +1,1 @@
+2021-03-10 17:09:56.9278||INFO|Com.Gosol.INOUT.API.Controllers.QuanTriHeThong.VaoRaController|The SqlParameter is already contained by another SqlParameterCollection. |url: https://localhost/api/v1/VaoRa/Vao|action: Vao

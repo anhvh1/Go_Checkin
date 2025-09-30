@@ -1,0 +1,355 @@
+import React, {Component} from 'react';
+import Constants, {
+  MODAL_NORMAL,
+  ITEM_LAYOUT3,
+  REQUIRED,
+  COL_ITEM_LAYOUT_HALF,
+  ITEM_LAYOUT_HALF3,
+  COL_COL_ITEM_LAYOUT_RIGHT
+} from '../../../settings/constants';
+import {Modal, Form, Input, Switch, Button, Row, Col} from 'antd';
+import TreeSelect from '../../../components/uielements/treeSelect';
+import Select, {Option} from '../../../components/uielements/select';
+import api from "./config";
+import {_debounce} from '../../../helpers/utility';
+
+const {Item} = Form;
+
+const ModalAdd = Form.create({name: 'modal_add_DG'})(
+  // eslint-disable-next-line
+  class extends Component {
+    constructor(props) {
+      super(props);
+      this.state = {
+        DanhSachTinh: [],
+        DanhSachHuyen: [],
+        DanhSachXa: [],
+        CoQuanChaID: "",
+        TenCoQuanCha: "",
+        allRight: false,
+        disabled: true,
+
+        TinhChaID: undefined,
+        HuyenChaID: undefined,
+        listCap: [],
+        codeExist: false
+      };
+      this.checkCode = _debounce(this.checkCodeApi, 500);
+    }
+
+    componentDidMount() {
+      const {dataModalAdd} = this.props;
+      if (dataModalAdd) {
+        const {DanhSachTinh, CoQuanChaID, TenCoQuanCha} = dataModalAdd;
+        let listCap = [
+          {value: "1", label: "Cấp UBND tỉnh"}
+        ];
+        if (CoQuanChaID) {
+          api.chiTietCoQuan({CoQuanID: CoQuanChaID})
+            .then(response => {
+              if (response.data.Status > 0) {
+                let TinhChaID = response.data.Data.TinhID;
+                let HuyenChaID = response.data.Data.HuyenID;
+                if (TinhChaID && HuyenChaID) {
+                  if (response.data.Data.CapID === 1) {
+                    listCap = [
+                      {value: "2", label: "Cấp sở, ban ngành"},
+                      {value: "3", label: "Cấp UBND huyện"}
+                    ];
+                  } else if (response.data.Data.CapID > 1) {
+                    listCap = [
+                      {value: "4", label: "Cấp phòng ban"},
+                      {value: "5", label: "Cấp UBND xã"}
+                    ];
+                  }
+                  api.danhSachDiaGioi({ID: TinhChaID, Cap: Constants.HUYEN})
+                    .then(response2 => {
+                      if (response2.data.Status > 0) {
+                        api.danhSachDiaGioi({ID: HuyenChaID, Cap: Constants.XA})
+                          .then(response3 => {
+                            if (response3.data.Status > 0) {
+                              this.setState({
+                                TinhChaID,
+                                HuyenChaID,
+                                listCap,
+                                DanhSachHuyen: response2.data.Data,
+                                DanhSachXa: response3.data.Data,
+                                DanhSachTinh,
+                                CoQuanChaID,
+                                TenCoQuanCha,
+                                allRight: true,
+                              });
+                            }
+                          });
+                      }
+                    });
+                }
+              }
+            });
+        } else {
+          this.setState({
+            listCap,
+            DanhSachTinh,
+            CoQuanChaID,
+            TenCoQuanCha,
+            allRight: true
+          });
+        }
+      }
+    }
+
+    onOk = (e) => {
+      e.preventDefault();
+      this.props.form.validateFields((err, value) => {
+        if (!err) {
+          const {onCreate} = this.props;
+          onCreate({...value});
+        }
+      });
+    };
+
+    onChangeTinh = (TinhID) => {
+      if (TinhID) {
+        api.danhSachDiaGioi({
+          ID: TinhID,
+          Cap: Constants.HUYEN,
+        })
+          .then(response => {
+            if (response.data.Status > 0) {
+              this.setState({
+                DanhSachHuyen: response.data.Data,
+                DanhSachXa: [],
+              }, () => {
+                this.props.form.setFieldsValue({HuyenID: undefined, XaID: undefined});
+              });
+            } else {
+              Modal.error({
+                title: "Lỗi",
+                content: response.data.Message
+              });
+            }
+          }).catch(error => {
+          Modal.error(Constants.API_ERROR)
+        });
+      } else {
+        this.setState({DanhSachHuyen: [], DanhSachXa: []}, () => {
+          this.props.form.setFieldsValue({HuyenID: undefined, XaID: undefined});
+        });
+      }
+    };
+    onChangeHuyen = (HuyenID) => {
+      if (HuyenID) {
+        api.danhSachDiaGioi({
+          ID: HuyenID,
+          Cap: Constants.XA,
+        })
+          .then(response => {
+            if (response.data.Status > 0) {
+              this.setState({DanhSachXa: response.data.Data}, () => {
+                this.props.form.setFieldsValue({XaID: undefined});
+              });
+            } else {
+              Modal.error({
+                title: "Lỗi",
+                content: response.data.Message
+              });
+            }
+          }).catch(error => {
+          Modal.error(Constants.API_ERROR)
+        });
+      } else {
+        this.setState({DanhSachXa: []}, () => {
+          this.props.form.setFieldsValue({XaID: undefined});
+        });
+      }
+    };
+
+    checkCodeApi = () => {
+      const MaCQ = this.props.form.getFieldValue("MaCQ");
+      const CoQuanID = 0;
+      let codeExist = false;
+      let field = {value: MaCQ};
+      if (MaCQ) {
+        api.CheckMaCQ({MaCQ, CoQuanID})
+          .then(response => {
+            if (response.data.Status < 1) { //ma co quan da ton tai
+              codeExist = true;
+              field = {
+                ...field,
+                errors: [new Error('Mã cơ quan đã được sử dụng!')]
+              };
+            }
+            this.setState({codeExist: codeExist}, () => {
+              this.props.form.setFields({MaCQ: field});
+            });
+          });
+      } else {
+        this.setState({codeExist});
+      }
+    };
+
+    checkCodeValidator = (rule, value, callback) => {
+      if (value && this.state.codeExist) {
+        callback("Mã cơ quan đã được sử dụng!");
+      }
+      callback();
+    };
+
+    renderSuDungPM = () => {
+      const {user_id} = this.props;
+      const {CoQuanChaID} = this.state;
+      const {getFieldDecorator} = this.props.form;
+      let flagSuDungPM = false;
+      if (user_id === 1) {
+        flagSuDungPM = !CoQuanChaID;
+      } else {
+        flagSuDungPM = false;
+      }
+      const SuDungPM = <Item label="Sử dụng phần mềm" {...ITEM_LAYOUT3}>
+        {getFieldDecorator('SuDungPM', {
+          initialValue: flagSuDungPM
+        })(<Switch defaultChecked={flagSuDungPM}/>)}
+      </Item>;
+      const CQCoHieuLuc = <Item label="Cơ quan có hiệu lực" {...ITEM_LAYOUT3}>
+        {getFieldDecorator('CQCoHieuLuc', {
+          initialValue: true
+        })(<Switch defaultChecked={true}/>)}
+      </Item>;
+      if (user_id === 1) {
+        if (CoQuanChaID) {
+          return CQCoHieuLuc;
+        } else {
+          return SuDungPM;
+        }
+      } else {
+        return CQCoHieuLuc;
+      }
+    };
+
+    render() {
+      const {confirmLoading, visible, onCancel, form} = this.props;
+      const {getFieldDecorator} = form;
+      if (!this.state.allRight) return null;
+      return (
+        <Modal
+          title="Thêm thông tin cơ quan, đơn vị"
+          width={550}
+          visible={visible}
+          onCancel={onCancel}
+          footer={[
+            <Button key="back" onClick={onCancel}>Hủy</Button>,
+            <Button key="submit" htmlType="submit" type="primary" form="myForm"
+                    loading={confirmLoading} onClick={this.onOk}>Lưu</Button>,
+          ]}
+        >
+          <Form id="myForm" layout="horizontal">
+            <Item label="Tên cơ quan" {...ITEM_LAYOUT3}>
+              {getFieldDecorator('TenCoQuan', {
+                rules: [{...REQUIRED}],
+              })(<Input autoFocus/>)}
+            </Item>
+            <Item label="Mã cơ quan" {...ITEM_LAYOUT3}>
+              {getFieldDecorator('MaCQ', {
+                rules: [
+                  {...REQUIRED},
+                  {validator: this.checkCodeValidator}
+                ],
+              })(<Input onChange={this.checkCode}/>)}
+            </Item>
+            {
+              this.state.CoQuanChaID
+                ? (
+                  <Item label="Cơ quan cha" {...ITEM_LAYOUT3}>
+                    {getFieldDecorator('CoQuanChaID', {
+                      rules: [{...REQUIRED}],
+                      initialValue: this.state.CoQuanChaID
+                    })(
+                      <Select disabled={this.state.disabled}>
+                        <Option value={this.state.CoQuanChaID}>
+                          {this.state.TenCoQuanCha}
+                        </Option>
+                      </Select>
+                    )}
+                  </Item>
+                )
+                : ""
+            }
+            {/*<Item label="Cấp" {...ITEM_LAYOUT3}>*/}
+            {/*  {getFieldDecorator('CapID', {*/}
+            {/*    initialValue: !this.state.CoQuanChaID ? "1" : ""*/}
+            {/*  })(*/}
+            {/*    <Select>*/}
+            {/*      {this.state.listCap.map((item) => (*/}
+            {/*        <Option key={item.value} value={item.value}>{item.label}</Option>*/}
+            {/*      ))}*/}
+            {/*    </Select>*/}
+            {/*  )}*/}
+            {/*</Item>*/}
+            <Item label="Tỉnh" {...ITEM_LAYOUT3}>
+              {getFieldDecorator('TinhID', {
+                rules: [{...REQUIRED}],
+                initialValue: this.state.TinhChaID
+              })(
+                <Select showSearch onChange={this.onChangeTinh} placeholder="Chọn địa chỉ tỉnh">
+                  {this.state.DanhSachTinh.map((value) => (
+                    <Option key={value.ID} value={value.ID}>
+                      {value.Ten}
+                    </Option>
+                  ))}
+                </Select>,
+              )}
+            </Item>
+            <Item label="Huyện" {...ITEM_LAYOUT3}>
+              {getFieldDecorator('HuyenID', {
+                rules: [{...REQUIRED}],
+                initialValue: this.state.HuyenChaID
+              })(
+                <Select showSearch onChange={this.onChangeHuyen} placeholder={"Chọn địa chỉ huyện"}>
+                  {this.state.DanhSachHuyen.map((value) => (
+                    <Option key={value.ID} value={value.ID}>
+                      {value.Ten}
+                    </Option>
+                  ))}
+                </Select>,
+              )}
+            </Item>
+            <Item label="Xã" {...ITEM_LAYOUT3}>
+              {getFieldDecorator('XaID', {
+                //rules: [{ ...REQUIRED }],
+              })(
+                <Select showSearch placeholder={"Chọn địa chỉ xã"}>
+                  {this.state.DanhSachXa.map((value) => (
+                    <Option key={value.ID} value={value.ID}>
+                      {value.Ten}
+                    </Option>
+                  ))}
+                </Select>,
+              )}
+            </Item>
+            {/*<Row>*/}
+            {/*  <Col {...COL_ITEM_LAYOUT_HALF}>*/}
+            {this.renderSuDungPM()}
+            {/*</Col>*/}
+            {/*{this.state.CoQuanChaID ? "" : <Col {...COL_ITEM_LAYOUT_HALF}>*/}
+            {/*  <Row>*/}
+            {/*    <Col {...COL_COL_ITEM_LAYOUT_RIGHT}>*/}
+            {/*      {this.state.CoQuanChaID ? <Item label="Cơ quan có hiệu lực" {...ITEM_LAYOUT_HALF3}>*/}
+            {/*        {getFieldDecorator('CQCoHieuLuc', {*/}
+            {/*          initialValue: true*/}
+            {/*        })(<Switch defaultChecked={true}/>)}*/}
+            {/*      </Item> : <Item label="Sử dụng phần mềm" {...ITEM_LAYOUT_HALF3}>*/}
+            {/*        {getFieldDecorator('SuDungPM', {*/}
+            {/*          initialValue: true*/}
+            {/*        })(<Switch defaultChecked={true}/>)}*/}
+            {/*      </Item>}*/}
+            {/*    </Col>*/}
+            {/*  </Row>*/}
+            {/*</Col>}*/}
+            {/*</Row>*/}
+          </Form>
+        </Modal>
+      );
+    }
+  },
+);
+export {ModalAdd}

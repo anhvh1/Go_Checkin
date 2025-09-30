@@ -1,0 +1,7 @@
+2020-09-09 09:32:04.6022||INFO|Com.Gosol.INOUT.API.Controllers.QuanTriHeThong.HeThongCanBoController|Object reference not set to an instance of an object. |url: https://localhost/api/v1/HeThongCanBo/DanhSachCanBo_TrongCoQuanSuDungPhanMem|action: DanhSachCanBo_TrongCoQuanSuDungPhanMem
+2020-09-09 11:54:23.4046||INFO|Com.Gosol.INOUT.API.Controllers.QuanTriHeThong.HeThongCanBoController|Object reference not set to an instance of an object. |url: https://localhost/api/v1/HeThongCanBo/GetDanhSachLeTan|action: GetDanhSachLeTan
+2020-09-09 11:54:28.2802||INFO|Com.Gosol.INOUT.API.Controllers.QuanTriHeThong.HeThongCanBoController|The method or operation is not implemented. |url: https://localhost/api/v1/HeThongCanBo/GetDanhSachLeTan|action: GetDanhSachLeTan
+2020-09-09 11:54:58.4739||INFO|Com.Gosol.INOUT.API.Controllers.QuanTriHeThong.HeThongCanBoController|The method or operation is not implemented. |url: https://localhost/api/v1/HeThongCanBo/GetDanhSachLeTan|action: GetDanhSachLeTan
+2020-09-09 16:20:48.2325||INFO|Com.Gosol.INOUT.API.Controllers.QuanTriHeThong.VaoRaController|Conversion failed when converting the nvarchar value 'Com.Gosol.INOUT.Models.DanhMuc.DanhMucCoQuanDonViModel' to data type int.
+The data for table-valued parameter "@ListCoQuan" doesn't conform to the table type of the parameter. SQL Server error is: 245, state: 1
+The statement has been terminated. |url: https://localhost/api/v1/VaoRa/Get_By_AnhChanDung|action: Get_By_AnhChanDung

@@ -1,0 +1,517 @@
+{
+  "format": 1,
+  "restore": {
+    "D:\\Works\\KeKhaiTaiSan_ViSuaSVN_45\\Server\\Com.Gosol.KKTS\\Com.Gosol.KKTS.API\\Com.Gosol.KKTS.API.csproj": {}
+  },
+  "projects": {
+    "D:\\Works\\KeKhaiTaiSan_ViSuaSVN_45\\Server\\Com.Gosol.KKTS\\Com.Gosol.KKTS.API\\Com.Gosol.KKTS.API.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "D:\\Works\\KeKhaiTaiSan_ViSuaSVN_45\\Server\\Com.Gosol.KKTS\\Com.Gosol.KKTS.API\\Com.Gosol.KKTS.API.csproj",
+        "projectName": "Com.Gosol.KKTS.API",
+        "projectPath": "D:\\Works\\KeKhaiTaiSan_ViSuaSVN_45\\Server\\Com.Gosol.KKTS\\Com.Gosol.KKTS.API\\Com.Gosol.KKTS.API.csproj",
+        "packagesPath": "C:\\Users\\quyma\\.nuget\\packages\\",
+        "outputPath": "D:\\Works\\KeKhaiTaiSan_ViSuaSVN_45\\Server\\Com.Gosol.KKTS\\Com.Gosol.KKTS.API\\obj\\publish\\win-x86\\",
+        "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
+        ],
+        "configFilePaths": [
+          "C:\\Users\\quyma\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        ],
+        "originalTargetFrameworks": [
+          "netcoreapp3.0"
+        ],
+        "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "netcoreapp3.0": {
+            "projectReferences": {
+              "D:\\Works\\KeKhaiTaiSan_ViSuaSVN_45\\Server\\Com.Gosol.KKTS\\Com.Gosol.KKTS.BUS\\Com.Gosol.KKTS.BUS.csproj": {
+                "projectPath": "D:\\Works\\KeKhaiTaiSan_ViSuaSVN_45\\Server\\Com.Gosol.KKTS\\Com.Gosol.KKTS.BUS\\Com.Gosol.KKTS.BUS.csproj"
+              },
+              "D:\\Works\\KeKhaiTaiSan_ViSuaSVN_45\\Server\\Com.Gosol.KKTS\\Com.Gosol.KKTS.Security\\Com.Gosol.KKTS.Security.csproj": {
+                "projectPath": "D:\\Works\\KeKhaiTaiSan_ViSuaSVN_45\\Server\\Com.Gosol.KKTS\\Com.Gosol.KKTS.Security\\Com.Gosol.KKTS.Security.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        }
+      },
+      "frameworks": {
+        "netcoreapp3.0": {
+          "dependencies": {
+            "EPPlus": {
+              "target": "Package",
+              "version": "[4.5.3.2, )"
+            },
+            "Microsoft.AspNetCore.Cors": {
+              "target": "Package",
+              "version": "[2.2.0, )"
+            },
+            "Microsoft.AspNetCore.Mvc.Formatters.Json": {
+              "target": "Package",
+              "version": "[2.2.0, )"
+            },
+            "Microsoft.AspNetCore.Mvc.NewtonsoftJson": {
+              "target": "Package",
+              "version": "[3.0.0, )"
+            },
+            "Microsoft.EntityFrameworkCore.SqlServer": {
+              "target": "Package",
+              "version": "[3.0.0, )"
+            },
+            "Microsoft.EntityFrameworkCore.Tools": {
+              "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[3.0.0, )"
+            },
+            "Microsoft.Extensions.Configuration.Json": {
+              "target": "Package",
+              "version": "[3.0.0, )"
+            },
+            "Microsoft.Extensions.Logging.Debug": {
+              "target": "Package",
+              "version": "[3.0.0, )"
+            },
+            "Microsoft.VisualStudio.Web.CodeGeneration.Design": {
+              "target": "Package",
+              "version": "[3.0.0, )"
+            },
+            "Newtonsoft.Json": {
+              "target": "Package",
+              "version": "[12.0.2, )"
+            },
+            "System.IdentityModel.Tokens.Jwt": {
+              "target": "Package",
+              "version": "[5.5.0, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "downloadDependencies": [
+            {
+              "name": "Microsoft.AspNetCore.App.Runtime.win-x86",
+              "version": "[3.0.0, 3.0.0]"
+            },
+            {
+              "name": "Microsoft.NETCore.App.Host.win-x86",
+              "version": "[3.0.0, 3.0.0]"
+            },
+            {
+              "name": "Microsoft.NETCore.App.Runtime.win-x86",
+              "version": "[3.0.0, 3.0.0]"
+            },
+            {
+              "name": "Microsoft.WindowsDesktop.App.Runtime.win-x86",
+              "version": "[3.0.0, 3.0.0]"
+            }
+          ],
+          "frameworkReferences": {
+            "Microsoft.AspNetCore.App": {
+              "privateAssets": "none"
+            },
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\3.0.100\\RuntimeIdentifierGraph.json"
+        }
+      },
+      "runtimes": {
+        "win-x86": {
+          "#import": []
+        }
+      }
+    },
+    "D:\\Works\\KeKhaiTaiSan_ViSuaSVN_45\\Server\\Com.Gosol.KKTS\\Com.Gosol.KKTS.BUS\\Com.Gosol.KKTS.BUS.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "D:\\Works\\KeKhaiTaiSan_ViSuaSVN_45\\Server\\Com.Gosol.KKTS\\Com.Gosol.KKTS.BUS\\Com.Gosol.KKTS.BUS.csproj",
+        "projectName": "Com.Gosol.KKTS.BUS",
+        "projectPath": "D:\\Works\\KeKhaiTaiSan_ViSuaSVN_45\\Server\\Com.Gosol.KKTS\\Com.Gosol.KKTS.BUS\\Com.Gosol.KKTS.BUS.csproj",
+        "packagesPath": "C:\\Users\\quyma\\.nuget\\packages\\",
+        "outputPath": "D:\\Works\\KeKhaiTaiSan_ViSuaSVN_45\\Server\\Com.Gosol.KKTS\\Com.Gosol.KKTS.BUS\\obj\\",
+        "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
+        ],
+        "configFilePaths": [
+          "C:\\Users\\quyma\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        ],
+        "originalTargetFrameworks": [
+          "netcoreapp3.0"
+        ],
+        "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "netcoreapp3.0": {
+            "projectReferences": {
+              "D:\\Works\\KeKhaiTaiSan_ViSuaSVN_45\\Server\\Com.Gosol.KKTS\\Com.Gosol.KKTS.DAL\\Com.Gosol.KKTS.DAL.csproj": {
+                "projectPath": "D:\\Works\\KeKhaiTaiSan_ViSuaSVN_45\\Server\\Com.Gosol.KKTS\\Com.Gosol.KKTS.DAL\\Com.Gosol.KKTS.DAL.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        }
+      },
+      "frameworks": {
+        "netcoreapp3.0": {
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\3.0.100\\RuntimeIdentifierGraph.json"
+        }
+      },
+      "runtimes": {
+        "win-x86": {
+          "#import": []
+        }
+      }
+    },
+    "D:\\Works\\KeKhaiTaiSan_ViSuaSVN_45\\Server\\Com.Gosol.KKTS\\Com.Gosol.KKTS.DAL\\Com.Gosol.KKTS.DAL.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "D:\\Works\\KeKhaiTaiSan_ViSuaSVN_45\\Server\\Com.Gosol.KKTS\\Com.Gosol.KKTS.DAL\\Com.Gosol.KKTS.DAL.csproj",
+        "projectName": "Com.Gosol.KKTS.DAL",
+        "projectPath": "D:\\Works\\KeKhaiTaiSan_ViSuaSVN_45\\Server\\Com.Gosol.KKTS\\Com.Gosol.KKTS.DAL\\Com.Gosol.KKTS.DAL.csproj",
+        "packagesPath": "C:\\Users\\quyma\\.nuget\\packages\\",
+        "outputPath": "D:\\Works\\KeKhaiTaiSan_ViSuaSVN_45\\Server\\Com.Gosol.KKTS\\Com.Gosol.KKTS.DAL\\obj\\",
+        "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
+        ],
+        "configFilePaths": [
+          "C:\\Users\\quyma\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        ],
+        "originalTargetFrameworks": [
+          "netcoreapp3.0"
+        ],
+        "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "netcoreapp3.0": {
+            "projectReferences": {
+              "D:\\Works\\KeKhaiTaiSan_ViSuaSVN_45\\Server\\Com.Gosol.KKTS\\Com.Gosol.KKTS.Models\\Com.Gosol.KKTS.Models.csproj": {
+                "projectPath": "D:\\Works\\KeKhaiTaiSan_ViSuaSVN_45\\Server\\Com.Gosol.KKTS\\Com.Gosol.KKTS.Models\\Com.Gosol.KKTS.Models.csproj"
+              },
+              "D:\\Works\\KeKhaiTaiSan_ViSuaSVN_45\\Server\\Com.Gosol.KKTS\\Com.Gosol.KKTS.Ultilities\\Com.Gosol.KKTS.Ultilities.csproj": {
+                "projectPath": "D:\\Works\\KeKhaiTaiSan_ViSuaSVN_45\\Server\\Com.Gosol.KKTS\\Com.Gosol.KKTS.Ultilities\\Com.Gosol.KKTS.Ultilities.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        }
+      },
+      "frameworks": {
+        "netcoreapp3.0": {
+          "dependencies": {
+            "EPPlus": {
+              "target": "Package",
+              "version": "[4.5.3.2, )"
+            },
+            "ExcelDataReader.DataSet": {
+              "target": "Package",
+              "version": "[3.6.0, )"
+            },
+            "Grpc.Core": {
+              "target": "Package",
+              "version": "[2.24.0, )"
+            },
+            "Microsoft.AspNetCore.Hosting.Abstractions": {
+              "target": "Package",
+              "version": "[2.2.0, )"
+            },
+            "Microsoft.AspNetCore.Http.Features": {
+              "target": "Package",
+              "version": "[3.0.0, )"
+            },
+            "MySql.Data": {
+              "target": "Package",
+              "version": "[8.0.18, )"
+            },
+            "SharpZipLib": {
+              "target": "Package",
+              "version": "[1.2.0, )"
+            },
+            "System.Data.SqlClient": {
+              "target": "Package",
+              "version": "[4.7.0, )"
+            },
+            "System.Text.Encoding.CodePages": {
+              "target": "Package",
+              "version": "[4.6.0, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\3.0.100\\RuntimeIdentifierGraph.json"
+        }
+      },
+      "runtimes": {
+        "win-x86": {
+          "#import": []
+        }
+      }
+    },
+    "D:\\Works\\KeKhaiTaiSan_ViSuaSVN_45\\Server\\Com.Gosol.KKTS\\Com.Gosol.KKTS.Models\\Com.Gosol.KKTS.Models.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "D:\\Works\\KeKhaiTaiSan_ViSuaSVN_45\\Server\\Com.Gosol.KKTS\\Com.Gosol.KKTS.Models\\Com.Gosol.KKTS.Models.csproj",
+        "projectName": "Com.Gosol.KKTS.Models",
+        "projectPath": "D:\\Works\\KeKhaiTaiSan_ViSuaSVN_45\\Server\\Com.Gosol.KKTS\\Com.Gosol.KKTS.Models\\Com.Gosol.KKTS.Models.csproj",
+        "packagesPath": "C:\\Users\\quyma\\.nuget\\packages\\",
+        "outputPath": "D:\\Works\\KeKhaiTaiSan_ViSuaSVN_45\\Server\\Com.Gosol.KKTS\\Com.Gosol.KKTS.Models\\obj\\",
+        "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
+        ],
+        "configFilePaths": [
+          "C:\\Users\\quyma\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        ],
+        "originalTargetFrameworks": [
+          "netcoreapp3.0"
+        ],
+        "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "netcoreapp3.0": {
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        }
+      },
+      "frameworks": {
+        "netcoreapp3.0": {
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\3.0.100\\RuntimeIdentifierGraph.json"
+        }
+      },
+      "runtimes": {
+        "win-x86": {
+          "#import": []
+        }
+      }
+    },
+    "D:\\Works\\KeKhaiTaiSan_ViSuaSVN_45\\Server\\Com.Gosol.KKTS\\Com.Gosol.KKTS.Security\\Com.Gosol.KKTS.Security.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "D:\\Works\\KeKhaiTaiSan_ViSuaSVN_45\\Server\\Com.Gosol.KKTS\\Com.Gosol.KKTS.Security\\Com.Gosol.KKTS.Security.csproj",
+        "projectName": "Com.Gosol.KKTS.Security",
+        "projectPath": "D:\\Works\\KeKhaiTaiSan_ViSuaSVN_45\\Server\\Com.Gosol.KKTS\\Com.Gosol.KKTS.Security\\Com.Gosol.KKTS.Security.csproj",
+        "packagesPath": "C:\\Users\\quyma\\.nuget\\packages\\",
+        "outputPath": "D:\\Works\\KeKhaiTaiSan_ViSuaSVN_45\\Server\\Com.Gosol.KKTS\\Com.Gosol.KKTS.Security\\obj\\",
+        "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
+        ],
+        "configFilePaths": [
+          "C:\\Users\\quyma\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        ],
+        "originalTargetFrameworks": [
+          "netcoreapp3.0"
+        ],
+        "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "netcoreapp3.0": {
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        }
+      },
+      "frameworks": {
+        "netcoreapp3.0": {
+          "dependencies": {
+            "Microsoft.AspNetCore.Http.Abstractions": {
+              "target": "Package",
+              "version": "[2.2.0, )"
+            },
+            "System.Data.SqlClient": {
+              "target": "Package",
+              "version": "[4.7.0, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\3.0.100\\RuntimeIdentifierGraph.json"
+        }
+      },
+      "runtimes": {
+        "win-x86": {
+          "#import": []
+        }
+      }
+    },
+    "D:\\Works\\KeKhaiTaiSan_ViSuaSVN_45\\Server\\Com.Gosol.KKTS\\Com.Gosol.KKTS.Ultilities\\Com.Gosol.KKTS.Ultilities.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "D:\\Works\\KeKhaiTaiSan_ViSuaSVN_45\\Server\\Com.Gosol.KKTS\\Com.Gosol.KKTS.Ultilities\\Com.Gosol.KKTS.Ultilities.csproj",
+        "projectName": "Com.Gosol.KKTS.Ultilities",
+        "projectPath": "D:\\Works\\KeKhaiTaiSan_ViSuaSVN_45\\Server\\Com.Gosol.KKTS\\Com.Gosol.KKTS.Ultilities\\Com.Gosol.KKTS.Ultilities.csproj",
+        "packagesPath": "C:\\Users\\quyma\\.nuget\\packages\\",
+        "outputPath": "D:\\Works\\KeKhaiTaiSan_ViSuaSVN_45\\Server\\Com.Gosol.KKTS\\Com.Gosol.KKTS.Ultilities\\obj\\",
+        "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
+        ],
+        "configFilePaths": [
+          "C:\\Users\\quyma\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        ],
+        "originalTargetFrameworks": [
+          "netcoreapp3.0"
+        ],
+        "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "netcoreapp3.0": {
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        }
+      },
+      "frameworks": {
+        "netcoreapp3.0": {
+          "dependencies": {
+            "MySql.Data": {
+              "target": "Package",
+              "version": "[8.0.17, )"
+            },
+            "System.Configuration.ConfigurationManager": {
+              "target": "Package",
+              "version": "[4.6.0, )"
+            },
+            "System.Data.SqlClient": {
+              "target": "Package",
+              "version": "[4.7.0, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\3.0.100\\RuntimeIdentifierGraph.json"
+        }
+      },
+      "runtimes": {
+        "win-x86": {
+          "#import": []
+        }
+      }
+    }
+  }
+}

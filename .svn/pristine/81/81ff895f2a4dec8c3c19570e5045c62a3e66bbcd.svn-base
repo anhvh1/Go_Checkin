@@ -1,0 +1,16 @@
+{
+  "AppSetting": {
+    //"appConnectionStrings": "Server=localhost;Database=db_kekhaitaisan;port=3307;User Id=vha;password=vha@123",
+    "appConnectionStrings": "Server=192.168.100.45;Database=db_kekhaitaisan;port=3307;User Id=anhvh;password=gosol@123",
+    "tokenAudience": "FE1865C4-C12D-41E5-A767-B8CA1BAB67BA",
+    "number_token_expire_date": 1
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft": "Warning",
+      "Microsoft.Hosting.Lifetime": "Information"
+    }
+  },
+  "AllowedHosts": "*"
+}

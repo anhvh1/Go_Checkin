@@ -1,0 +1,2 @@
+2020-06-22 16:52:24.2613||INFO|Com.Gosol.INOUT.API.Controllers.QuanTriHeThong.VaoRaController|Object reference not set to an instance of an object. |url: https://localhost/api/v1/VaoRa/Vao|action: Vao
+2020-06-22 16:58:31.2164||INFO|Com.Gosol.INOUT.API.Controllers.QuanTriHeThong.VaoRaController|Procedure or function v1_NV_ThongTinVaoRa_Insert has too many arguments specified. |url: https://localhost/api/v1/VaoRa/Vao|action: Vao

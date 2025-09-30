@@ -1,0 +1,446 @@
+import React, {Component} from 'react';
+import {Col, message, Row, Radio, Tooltip, Icon, Upload} from 'antd';
+import {Select, Option, Input, Modal, Button, TreeSelect} from "../../../components/uielements/exportComponent";
+import Constants from '../../../settings/constants';
+import {getBase64, MessageError, upperFirstLetter} from '../../../helpers/utility';
+import Styled from './styled';
+import apiPhanQuyen from "../QLPhanQuyen/config";
+import {Form} from 'antd4';
+import ImgCrop from "antd-img-crop";
+import ModalCamera from './modalCamera';
+
+const {REQUIRED,} = Constants;
+const {Item} = Form;
+const {Group} = Radio;
+
+export default class extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      DanhSachNhomNguoiDung: [],
+      DanhSachCanBo: [],
+      LoaiThemCoQuan: 1,
+      AnhNhanDien: null,
+      visibleModalCamera: false,
+      modalKey: 0
+    };
+    this.formRef = React.createRef();
+  }
+
+  onOk = async (e) => {
+    e.preventDefault();
+    const form = this.formRef.current;
+    const value = await form.validateFields();
+    if (!value.CoQuanID && !value.TenCoQuan) {
+      message.destroy();
+      message.warn('Chưa chọn cơ quan');
+      return;
+    }
+    if (!value.DanhSachCanBo || !value.DanhSachCanBo.length) {
+      message.destroy();
+      message.warn('Danh sách cán bộ rỗng');
+      return;
+    } else {
+      value.DanhSachCanBo.forEach(item => {
+        item.TenCanBo = upperFirstLetter(item.TenCanBo);
+        item.DanhSachNhomNguoiDung = item.ListNhomNguoiDungID.map(nhomid => ({NhomNguoiDungID: nhomid}));
+        delete item.ListNhomNguoiDungID;
+      });
+    }
+    const isDuplicate = this.checkDuplicateEmail(value.DanhSachCanBo);
+    if (isDuplicate) {
+      return;
+    }
+    const {AnhNhanDien} = this.state;
+    this.props.onCreate(value, AnhNhanDien);
+  };
+
+  checkDuplicateEmail = (ListCanBo) => {
+    const ListEmail = ListCanBo.map(item => item.Email);
+    const findDuplicates = ListEmail.filter((item, index) => ListEmail.indexOf(item) !== index);
+    if (findDuplicates.length) {
+      MessageError('Email nhập mới bị trùng, vui lòng kiểm tra lại');
+      return true;
+    }
+    return false;
+  };
+
+  componentDidMount() {
+    const {dataEdit} = this.props;
+    if (dataEdit.CanBoID) {
+      setTimeout(() => {
+        const form = this.formRef.current;
+        const {DanhSachCanBo} = this.state;
+        DanhSachCanBo.push({});
+        this.setState({DanhSachCanBo}, () => {
+          const CoQuanID = dataEdit.CoQuanID.toString();
+          const CanBoID = dataEdit.CanBoID;
+          const DanhSachCanBo = [{
+            TenCanBo: dataEdit.TenCanBo,
+            Email: dataEdit.Email,
+            ListNhomNguoiDungID: dataEdit.ListNhomNguoiDungID
+          }];
+          this.changeCoQuan(CoQuanID, false);
+          form && form.setFieldsValue({
+            CoQuanID,
+            CanBoID,
+            DanhSachCanBo
+          });
+          if (dataEdit.AnhHoSo) {
+            const AnhNhanDien = {FileUrl: dataEdit.AnhHoSo};
+            this.setState({AnhNhanDien});
+          }
+        });
+      }, 200);
+    } else {
+      this.ThemCanBo();
+      setTimeout(() => {
+        this.setInitialCoQuan();
+      }, 200);
+    }
+  }
+
+  setInitialCoQuan = () => {
+    const {DanhSachCoQuan} = this.props;
+    if (DanhSachCoQuan.length) {
+      const CoQuanID = DanhSachCoQuan[0].CoQuanID;
+      const form = this.formRef.current;
+      form && form.setFieldsValue({CoQuanID});
+      this.changeCoQuan(CoQuanID, true);
+    }
+  };
+
+  setInitialTenCoQuan = () => {
+    const form = this.formRef.current;
+    form && form.setFieldsValue({TenCoQuan: ""});
+    this.changeCoQuan(null, true);
+    //get nhóm tổng
+    const {DanhSachCoQuan} = this.props;
+    if (DanhSachCoQuan.length) {
+      const CoQuanID = DanhSachCoQuan[0].CoQuanID;
+      apiPhanQuyen.DanhSachNhomByCoQuanID({CoQuanID}).then(response => {
+        if (response.data.Status > 0) {
+          const DanhSachNhomNguoiDung = response.data.Data;
+          DanhSachNhomNguoiDung.forEach(item => {
+            item.NhomNguoiDungID = item.NhomTongID;
+          });
+          const TruyVetToanTinh = DanhSachNhomNguoiDung.find(item => item.TenNhom === 'Truy vết Y tế trên toàn tỉnh');
+          if (TruyVetToanTinh) {
+            const indexOf = DanhSachNhomNguoiDung.indexOf(TruyVetToanTinh);
+            DanhSachNhomNguoiDung.splice(indexOf, 1);
+          }
+          this.setState({DanhSachNhomNguoiDung});
+        }
+      })
+    }
+  };
+
+  onCancel = () => {
+    const {onCancel} = this.props;
+    onCancel();
+  };
+
+  changeCoQuan = (value, reset = true) => {
+    //Clear data nhóm người dùng
+    const form = this.formRef.current;
+    if (form) {
+      const {DanhSachCanBo} = this.state;
+      let dataOld = form.getFieldValue('DanhSachCanBo');
+      dataOld = dataOld && Object.values(dataOld);
+      reset && DanhSachCanBo.forEach((item, index) => {
+        form.setFieldsValue({
+          DanhSachCanBo: {
+            [index]: {
+              ListNhomNguoiDungID: [],
+              TenCanBo: dataOld[index].TenCanBo,
+              Email: dataOld[index].Email
+            }
+          }
+        });
+      });
+    }
+    //Lấy danh sách nhóm người dùng theo cơ quan
+    if (value) {
+      apiPhanQuyen.DanhSachNhomByCoQuanID({CoQuanID: value}).then(response => {
+        if (response.data.Status > 0) {
+          const DanhSachNhomNguoiDung = response.data.Data;
+          const TruyVetToanTinh = DanhSachNhomNguoiDung.find(item => item.TenNhom === 'Truy vết Y tế trên toàn tỉnh');
+          if (TruyVetToanTinh) {
+            const indexOf = DanhSachNhomNguoiDung.indexOf(TruyVetToanTinh);
+            DanhSachNhomNguoiDung.splice(indexOf, 1);
+          }
+          this.setState({DanhSachNhomNguoiDung});
+        }
+      })
+    } else {
+      this.setState({DanhSachNhomNguoiDung: []});
+    }
+  };
+
+  ThemCanBo = () => {
+    const {DanhSachCanBo} = this.state;
+    DanhSachCanBo.unshift({});
+    let DSForm = {};
+    const form = this.formRef.current;
+    if (form) {
+      const {getFieldValue} = form;
+      DSForm = getFieldValue('DanhSachCanBo');
+    }
+    this.setState({DanhSachCanBo}, () => {
+      DSForm = Object.values(DSForm);
+      DSForm.unshift({
+        TenCanBo: "",
+        Email: "",
+        ListNhomNguoiDungID: []
+      });
+      if (form) {
+        const {setFieldsValue} = form;
+        setFieldsValue({
+          DanhSachCanBo: DSForm
+        });
+      }
+    });
+  };
+
+  XoaCanBo = (index) => {
+    const {DanhSachCanBo} = this.state;
+    const form = this.formRef.current;
+    const {setFieldsValue, getFieldValue} = form;
+    let DSForm = getFieldValue('DanhSachCanBo');
+    DSForm = Object.values(DSForm);
+    DSForm.splice(index, 1);
+    setFieldsValue({
+      DanhSachCanBo: DSForm
+    });
+    DanhSachCanBo.splice(index, 1);
+    this.setState({DanhSachCanBo});
+  };
+
+  changeLoaiThemCoQuan = (e) => {
+    const LoaiThemCoQuan = e.target.value;
+    LoaiThemCoQuan === 1 && this.setInitialCoQuan();
+    LoaiThemCoQuan === 2 && this.setInitialTenCoQuan();
+    this.setState({LoaiThemCoQuan})
+  };
+
+  beforeUpload = (file, callback) => {
+    const {fileLimit} = this.props;
+    const isLt2M = file.size / 1024 / 1024 < fileLimit;
+    const isFile = file.type.includes('image');
+
+    if (!isLt2M) {
+      message.error(`File đính kèm phải nhỏ hơn ${fileLimit}MB`);
+    } else if (!isFile) {
+      message.error('Chỉ được tải lên file ảnh');
+    } else {
+      getBase64(file, callback);
+    }
+    return false;
+  };
+
+  renderAnhNhanDien = (file, base64) => {
+    const AnhNhanDien = {
+      FileUrl: base64,
+      FileData: file
+    };
+    this.setState({AnhNhanDien});
+  };
+
+  checkFileImage = (file) => {
+    const {fileLimit} = this.props;
+    const isLt2M = file.size / 1024 / 1024 < fileLimit;
+    const isFile = file.type.includes('image');
+    if (!isFile) {
+      message.error('Sai định dạng ảnh (JPG hoặc PNG)');
+    }
+    if (!isLt2M) {
+      message.error(`File ảnh phải nhỏ hơn ${fileLimit}MB`);
+    }
+    return isFile && isLt2M;
+  };
+
+  openCamera = () => {
+    let {modalKey} = this.state;
+    modalKey++;
+    this.setState({visibleModalCamera: true, modalKey});
+  };
+
+  closeModalCamera = () => {
+    this.setState({visibleModalCamera: false});
+  };
+
+  submitModalCamera = (file, base64) => {
+    this.renderAnhNhanDien(file, base64);
+    this.closeModalCamera();
+  };
+
+  render() {
+    const {visible, onCancel, dataEdit, loading, DanhSachCoQuan} = this.props;
+    const {DanhSachNhomNguoiDung, DanhSachCanBo, LoaiThemCoQuan, AnhNhanDien} = this.state;
+    const {visibleModalCamera, modalKey} = this.state;
+    // console.log(DanhSachNhomNguoiDung);
+    const FORMLAYOUT3COL = {
+      labelCol: {xs: 24, md: 24, lg: 24, xl: 24},
+      wrapperCol: {xs: 24, md: 24, lg: 24, xl: 24},
+      labelAlign: 'left'
+    };
+    const FORMLAYOUTROW = {
+      wrapperCol: 24,
+      labelAlign: 'left'
+    };
+    const FORMLAYOUT = {
+      labelCol: 8,
+      wrapperCol: 14,
+      labelAlign: 'left'
+    };
+    const IMAGECROP = {
+      grid: true,
+      // rotate: true,
+      modalOk: "Cắt ảnh",
+      modalCancel: "Hủy",
+      modalTitle: "Chỉnh sửa hình ảnh",
+      // shape: "round",
+      maxZoom: 5,
+      minZoom: 0.8
+    };
+
+    const COL_EDIT = {
+      lg: {span: 8},
+      md: {span: 10},
+      sm: {span: 24},
+      xs: {span: 24}
+    };
+
+    const COL_EDIT_RIGHT = {
+      lg: {span: 12, push: 2},
+      md: {span: 13, push: 1},
+      sm: {span: 24},
+      xs: {span: 24}
+    };
+    return (
+      <Modal
+        title={`${dataEdit.CanBoID ? 'Sửa' : 'Thêm'} thông tin cán bộ`}
+        width={950}
+        onCancel={this.onCancel}
+        visible={visible}
+        footer={[
+          <Button key="back" onClick={onCancel}>Hủy</Button>,
+          <Button key="submit" htmlType="submit" type="primary" form="formsp"
+                  onClick={this.onOk} loading={loading}>Lưu</Button>,
+        ]}
+      >
+        <Styled className={'modal'}>
+          <Form ref={this.formRef} {...FORMLAYOUTROW}>
+            <Item name={'CanBoID'} hidden initialValue={null}/>
+            <Group value={LoaiThemCoQuan} onChange={this.changeLoaiThemCoQuan} style={{marginBottom: 15}}>
+              <Radio value={1}>Chọn phòng ban</Radio>
+              <Radio value={2} disabled={dataEdit.CanBoID}>Thêm phòng ban</Radio>
+            </Group>
+            <Row style={{borderBottom: 'solid 1px #e6e6e6', marginBottom: 15}}>
+              {LoaiThemCoQuan === 1 ?
+                <Item name={'CoQuanID'} initialValue={undefined}>
+                  <TreeSelect
+                    style={{width: 400}}
+                    placeholder={"Chọn phòng ban"}
+                    noGetPopupContainer
+                    showSearch
+                    treeData={DanhSachCoQuan}
+                    dropdownStyle={{maxHeight: 400, overflow: 'auto'}}
+                    allowClear
+                    treeDefaultExpandAll
+                    notFoundContent={"Không có dữ liệu"}
+                    treeNodeFilterProp={'title'}
+                    onChange={value => this.changeCoQuan(value)}
+                  />
+                </Item> : <Item name={'TenCoQuan'} initialValue={""}>
+                  <Input style={{width: 400}} placeholder={'Tên phòng ban'}/>
+                </Item>}
+            </Row>
+            {!dataEdit.CanBoID ? <Row style={{marginBottom: 20}}>
+              <Col span={7}>Tên cán bộ <span style={{color: "red"}}>*</span></Col>
+              <Col span={6} push={1}>Email</Col>
+              <Col span={6} push={2}>Vai trò</Col>
+              <Col span={1} push={4}>
+                {!dataEdit.CanBoID ? <div style={{textAlign: 'right'}}>
+                  <Tooltip title={'Thêm cán bộ'}>
+                    <Button type={'primary'} icon={'plus'} onClick={this.ThemCanBo}
+                            style={{borderRadius: '50%', width: 40, height: 40}}/>
+                  </Tooltip>
+                </div> : ""}
+              </Col>
+            </Row> : ""}
+            {!dataEdit.CanBoID ? DanhSachCanBo.map((item, index) => (
+              <Row>
+                <Col span={7}>
+                  <Item name={['DanhSachCanBo', index, 'TenCanBo']} initialValue={""}
+                        rules={[{...REQUIRED}]}>
+                    <Input style={{textTransform: "capitalize"}}/>
+                  </Item>
+                </Col>
+                <Col span={6} push={1}>
+                  <Item name={['DanhSachCanBo', index, 'Email']} initialValue={""}>
+                    <Input/>
+                  </Item>
+                </Col>
+                <Col span={8} push={2}>
+                  <Item initialValue={[]} name={['DanhSachCanBo', index, 'ListNhomNguoiDungID']}>
+                    <Select allowClear={true} notFoundContent={"Không có dữ liệu"} showSearch
+                            mode={'multiple'} noGetPopupContainer>
+                      {DanhSachNhomNguoiDung.map((item) => <Option
+                        value={item.NhomNguoiDungID}>{item.TenNhom}</Option>)}
+                    </Select>
+                  </Item>
+                </Col>
+                {!dataEdit.CanBoID ? <Col span={1} push={2}>
+                  <Item style={{textAlign: 'right'}}>
+                    <Button icon={'minus'} type={'danger'} onClick={() => this.XoaCanBo(index)}/>
+                  </Item>
+                </Col> : ""}
+              </Row>
+            )) : ""}
+            {dataEdit.CanBoID ? <Row>
+              <Col {...COL_EDIT}>
+                {DanhSachCanBo.map((item, index) => <Row>
+                  <Item label={'Tên cán bộ'} name={['DanhSachCanBo', index, 'TenCanBo']} initialValue={""}
+                        rules={[{...REQUIRED}]}>
+                    <Input style={{textTransform: "capitalize"}}/>
+                  </Item>
+                  <Item label={'Email'} name={['DanhSachCanBo', index, 'Email']} initialValue={""}>
+                    <Input/>
+                  </Item>
+                  <Item label={'Vai trò'} initialValue={[]} name={['DanhSachCanBo', index, 'ListNhomNguoiDungID']}>
+                    <Select allowClear={true} notFoundContent={"Không có dữ liệu"} showSearch
+                            mode={'multiple'} noGetPopupContainer>
+                      {DanhSachNhomNguoiDung.map((item) => <Option
+                        value={item.NhomNguoiDungID}>{item.TenNhom}</Option>)}
+                    </Select>
+                  </Item>
+                </Row>)}
+              </Col>
+              <Col {...COL_EDIT_RIGHT}>
+                <Item label={'Ảnh nhận diện'} labelCol={{xs: 6, md: 6, lg: 8}} wrapperCol={{xs: 18, md: 18, lg: 16}}>
+                  <ImgCrop {...IMAGECROP} beforeCrop={this.checkFileImage}>
+                    <Upload accept={'.jpg, .png'} showUploadList={false}
+                            beforeUpload={file => this.beforeUpload(file, this.renderAnhNhanDien)}>
+                      {AnhNhanDien ? <img className={'img-nhan-dien'} src={AnhNhanDien.FileUrl}/> :
+                        <div className={'frame-picture'}>
+                          <Icon type={'plus'}/>
+                          <div>Nhấn để tải ảnh</div>
+                        </div>}
+                    </Upload>
+                  </ImgCrop>
+                </Item>
+                <Item label={'Hoặc'} labelCol={{xs: 6, md: 6, lg: 8}} wrapperCol={{xs: 18, md: 18, lg: 16}}>
+                  <Button type={'primary'} style={{width: 150}} onClick={this.openCamera}>Mở camera</Button>
+                </Item>
+              </Col>
+            </Row> : ""}
+          </Form>
+        </Styled>
+        {dataEdit.CanBoID ?
+          <ModalCamera visible={visibleModalCamera} onCancel={this.closeModalCamera} onOk={this.submitModalCamera}
+                       CanBoID={dataEdit.CanBoID}/> : ""}
+      </Modal>
+    );
+  }
+}

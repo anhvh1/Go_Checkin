@@ -1,0 +1,559 @@
+import React, { Component } from "react";
+import { connect } from "react-redux";
+import { Modal, message, Tooltip, Row, Col } from "antd";
+import LayoutWrapper from "../../../components/utility/layoutWrapper";
+import PageHeader from "../../../components/utility/pageHeader";
+import Box from "../../../components/utility/box";
+import BoxFilter from "../../../components/utility/boxFilter";
+import BoxTable from "../../../components/utility/boxTable";
+import PageAction from "../../../components/utility/pageAction";
+import {
+  Button,
+  InputSearch as Search,
+  TreeSelect,
+} from "../../../components/uielements/exportComponent";
+import actions from "../../redux/QuanTriHeThong/actions";
+import ModalAddEditCanBo from "./modalAddEditCanBo";
+import {
+  changeUrlFilter,
+  getFilterData,
+  getDefaultPageSize,
+  getRoleByKey,
+  MessageError,
+  printComponent,
+  getConfigLocal,
+  OnBuilding,
+} from "../../../helpers/utility";
+import queryString from "query-string";
+import api, { apiUrl } from "./config";
+import apiPhanQuyen from "../QLPhanQuyen/config";
+import Styled from "./styled";
+import { formDataCaller } from "../../../api/formDataCaller";
+import {
+  CloseOutlined,
+  DeleteOutlined,
+  DownloadOutlined,
+  FormOutlined,
+  PrinterOutlined,
+  ReloadOutlined,
+  SaveOutlined,
+  UserAddOutlined,
+} from "@ant-design/icons";
+
+class QuanTriAdminDonVi extends Component {
+  constructor(props) {
+    super(props);
+    const filterData = queryString.parse(this.props.location.search);
+    this.state = {
+      modalKey: 0,
+      visibleModalCanBo: false,
+      dataEditCanBo: {},
+      action: "",
+      loading: false,
+      filterData: filterData,
+      NguoiDungID: null,
+      CoQuanEdit: null,
+      TenCoQuanEdit: "",
+    };
+    this.printRef = React.createRef();
+  }
+
+  componentDidMount() {
+    this.props.getInitData(this.state.filterData);
+  }
+
+  onSearch = (value, property) => {
+    let oldFilterData = this.state.filterData;
+    let onFilter = { value, property };
+    let filterData = getFilterData(oldFilterData, onFilter, null);
+    //get filter data
+    this.setState({ filterData }, () => {
+      changeUrlFilter(this.state.filterData); //change url
+      this.props.getList(this.state.filterData); //get list
+    });
+  };
+
+  onTableChange = (pagination, filters, sorter) => {
+    let oldFilterData = this.state.filterData;
+    let onOrder = { pagination, filters, sorter };
+    let filterData = getFilterData(oldFilterData, null, onOrder);
+    //get filter data
+    this.setState({ filterData }, () => {
+      changeUrlFilter(this.state.filterData); //change url
+      this.props.getList(this.state.filterData); //get list
+    });
+  };
+
+  resetPassword = (NguoiDungID) => {
+    const { defaultPassword } = this.props;
+    Modal.confirm({
+      title: "Thông báo",
+      content: "Bạn có muốn đặt lại mật khẩu không ?",
+      okText: "Có",
+      cancelText: "Không",
+      onOk: () => {
+        api
+          .ResetMatKhau({ NguoiDungID })
+          .then((response) => {
+            if (response.data.Status > 0) {
+              Modal.success({
+                title: "Thông báo",
+                content: `Mật khẩu đã được chuyển về mặc định là: ${defaultPassword}`,
+                okText: "Đóng",
+              });
+            } else {
+              MessageError(response.data.Message);
+            }
+          })
+          .catch((error) => {
+            MessageError(error.toString());
+          });
+      },
+    });
+  };
+
+  ThemCanBo = () => {
+    let { modalKey } = this.state;
+    modalKey++;
+    this.setState({
+      dataEditCanBo: {},
+      action: "add",
+      visibleModalCanBo: true,
+      modalKey,
+    });
+  };
+
+  EditCanBo = (CanBoID, NguoiDungID) => {
+    api
+      .ChiTietCanBo({ CanBoID })
+      .then((response) => {
+        if (response.data.Status > 0) {
+          let { modalKey } = this.state;
+          modalKey++;
+          this.setState({
+            dataEditCanBo: response.data.Data,
+            action: "edit",
+            visibleModalCanBo: true,
+            modalKey,
+            NguoiDungID,
+          });
+        } else {
+          MessageError(response.data.Message);
+        }
+      })
+      .catch((error) => {
+        this.setState({ loading: false });
+        MessageError(error.toString());
+      });
+  };
+
+  closeModalCanBo = () => {
+    this.setState({ visibleModalCanBo: false });
+  };
+
+  submitModalCanBo = (value, AnhNhanDien) => {
+    const { action } = this.state;
+    if (action === "add") {
+      delete value.CanBoID;
+      this.setState({ loading: true });
+      api
+        .ThemCanBo(value)
+        .then((response) => {
+          this.setState({ loading: false });
+          if (response.data.Status > 0) {
+            message.success("Thêm cán bộ thành công");
+            this.closeModalCanBo();
+            this.props.getList(this.state.filterData);
+            //
+            if (!value.CoQuanID && value.TenCoQuan) {
+              this.props.getCQ();
+            }
+          } else {
+            MessageError(response.data.Message);
+          }
+        })
+        .catch((error) => {
+          this.setState({ loading: false });
+          MessageError(error.toString());
+        });
+    } else if (action === "edit") {
+      const canbo = value.DanhSachCanBo[0];
+      const modelSave = {
+        CanBoID: value.CanBoID,
+        CoQuanID: value.CoQuanID,
+        NguoiDungID: this.state.NguoiDungID,
+        ...canbo,
+      };
+      const formSave = new FormData();
+      if (AnhNhanDien && AnhNhanDien.FileData) {
+        formSave.append("files", AnhNhanDien.FileData);
+      }
+      formSave.append("HeThongCanBoV2ModelStr", JSON.stringify(modelSave));
+      this.setState({ loading: true });
+      // api.SuaCanBo(modelSave)
+      formDataCaller(apiUrl.suacanbov4, formSave)
+        .then((response) => {
+          this.setState({ loading: false });
+          if (response.data.Status > 0) {
+            message.success("Cập nhật thông tin cán bộ thành công");
+            this.closeModalCanBo();
+            this.setState({ NguoiDungID: null });
+            this.props.getList(this.state.filterData);
+          } else {
+            MessageError(response.data.Message);
+          }
+        })
+        .catch((error) => {
+          this.setState({ loading: false });
+          MessageError(error.toString());
+        });
+    }
+  };
+
+  XoaCanBo = (CanBoID) => {
+    Modal.confirm({
+      title: "Thông báo",
+      content: "Bạn có muốn xóa thông tin cán bộ này không ?",
+      okText: "Có",
+      cancelText: "Không",
+      onOk: () => {
+        api
+          .XoaTaiKhoan({ ListID: [CanBoID] })
+          .then((response) => {
+            if (response.data.Status > 0) {
+              message.success("Xóa thông tin đơn vị thành công");
+              this.props.getList(this.state.filterData);
+            } else {
+              MessageError(response.data.Message);
+            }
+          })
+          .catch((error) => {
+            MessageError(error.toString());
+          });
+      },
+    });
+  };
+
+  XoaCoQuan = (CoQuanID) => {
+    Modal.confirm({
+      title: "Thông báo",
+      content:
+        "Thao tác này sẽ xóa phòng ban và toàn bộ cán bộ thuộc phòng ban, bạn chắc chắn muốn xóa phòng ban này không ?",
+      okText: "Có",
+      cancelText: "Không",
+      onOk: () => {
+        api
+          .XoaCoQuan({ CoQuanID })
+          .then((response) => {
+            if (response.data.Status > 0) {
+              message.success("Xóa thông tin đơn vị thành công");
+              this.props.getListSP(this.state.filterData);
+              this.props.getCQ();
+            } else {
+              MessageError(response.data.Message);
+            }
+          })
+          .catch((error) => {
+            MessageError(error.toString());
+          });
+      },
+    });
+  };
+
+  EditCoQuan = (record) => {
+    this.setState({
+      CoQuanEdit: record.CoQuanID,
+      TenCoQuanEdit: record.TenCoQuan,
+    });
+  };
+
+  CancelEditCoQuan = () => {
+    this.setState({ CoQuanEdit: null, TenCoQuanEdit: "" });
+  };
+
+  SaveEditCoQuan = (CoQuanID, TenCoQuan) => {
+    api
+      .SuaTenCoQuan({ CoQuanID, TenCoQuan })
+      .then((response) => {
+        if (response.data.Status > 0) {
+          message.destroy();
+          message.success("Thay đổi thông tin phòng ban thành công");
+          this.CancelEditCoQuan();
+          this.props.getList(this.state.filterData);
+          this.props.getCQ();
+        } else {
+          MessageError(response.data.Message);
+        }
+      })
+      .catch((error) => {
+        this.setState({ loading: false });
+        MessageError(error.toString());
+      });
+  };
+
+  printQR = () => {
+    setTimeout(() => {
+      printComponent(this.printRef.current.innerHTML);
+    }, 500);
+  };
+
+  downloadQR = () => {
+    const { QRCode, TenCoQuan } = this.props;
+    const a = document.createElement("a"); //Create <a>
+    a.href = QRCode; //Image Base64 Goes here
+    a.target = "_blank";
+    a.download = `QRCheckin-${TenCoQuan}.png`; //File name Here
+    a.click(); //Downloaded file
+  };
+
+  renderTenCanBo = (record) => {
+    const { DanhSachNhomNguoiDung } = record;
+    const DanhSachTenNhomNguoiDung = DanhSachNhomNguoiDung.map(
+      (item) => item.TenNhom
+    );
+    const TenNhomNguoiDung = DanhSachTenNhomNguoiDung.join(", ");
+    return (
+      <div>
+        Tên cán bộ: {record.TenCanBo}
+        <br />
+        Tài khoản: {record.TenNguoiDung}
+        <br />
+        {DanhSachTenNhomNguoiDung.length ? `Vai trò: ${TenNhomNguoiDung}` : ""}
+      </div>
+    );
+  };
+
+  renderTenCoQuan = (text, record) => {
+    const { CoQuanEdit, TenCoQuanEdit } = this.state;
+    if (CoQuanEdit && CoQuanEdit === record.CoQuanID) {
+      return (
+        <Search
+          enterButton={<SaveOutlined />}
+          value={TenCoQuanEdit}
+          onSearch={(value) => this.SaveEditCoQuan(CoQuanEdit, value)}
+          onChange={this.changeEditCoQuan}
+        />
+      );
+    } else {
+      return text;
+    }
+  };
+
+  changeEditCoQuan = (e) => {
+    this.setState({ TenCoQuanEdit: e.target.value });
+  };
+
+  renderThaoTacCoQuan = (record) => {
+    const { CoQuanEdit } = this.state;
+    return (
+      <div className={"action-btn"}>
+        <Tooltip
+          title={
+            CoQuanEdit && CoQuanEdit === record.CoQuanID
+              ? "Hủy"
+              : "Sửa phòng ban"
+          }
+        >
+          {CoQuanEdit && CoQuanEdit === record.CoQuanID ? (
+            <CloseOutlined
+              style={{ color: "red" }}
+              onClick={this.CancelEditCoQuan}
+            />
+          ) : (
+            <FormOutlined onClick={() => this.EditCoQuan(record)} />
+          )}
+        </Tooltip>
+        <Tooltip title={"Xóa phòng bạn"}>
+          <DeleteOutlined onClick={() => this.XoaCoQuan(record.CoQuanID)} />
+        </Tooltip>
+      </div>
+    );
+  };
+
+  renderThaoTacCanBo = (record) => {
+    return (
+      <div className={"action-btn"}>
+        <Tooltip title={"Đặt lại mật khẩu"}>
+          <ReloadOutlined
+            onClick={() => this.resetPassword(record.NguoiDungID)}
+          />
+        </Tooltip>
+        <Tooltip title={"Sửa cán bộ"}>
+          <FormOutlined
+            onClick={() => this.EditCanBo(record.CanBoID, record.NguoiDungID)}
+          />
+        </Tooltip>
+        <Tooltip title={"Xóa cán bộ"}>
+          <DeleteOutlined onClick={() => this.XoaCanBo(record.CanBoID)} />
+        </Tooltip>
+      </div>
+    );
+  };
+
+  render() {
+    const {
+      modalKey,
+      visibleModalCanBo,
+      dataEditCanBo,
+      loading,
+      filterData,
+      CoQuanQRPrint,
+    } = this.state;
+    const {
+      DanhSachCanBo,
+      DanhSachCoQuan,
+      TotalRow,
+      TableLoading,
+      role,
+      QRCode,
+      TenCoQuan,
+      fileLimit,
+    } = this.props;
+    const PageNumber = filterData.PageNumber
+      ? parseInt(filterData.PageNumber)
+      : 1;
+    const PageSize = filterData.PageSize
+      ? parseInt(filterData.PageSize)
+      : getDefaultPageSize();
+    const column = [
+      {
+        title: "STT",
+        align: "center",
+        width: "5%",
+        render: (text, record, index) => (
+          <span>{(PageNumber - 1) * PageSize + (index + 1)}</span>
+        ),
+      },
+      {
+        title: "Cán bộ đơn vị",
+        width: "35%",
+        render: (text, record) => this.renderTenCanBo(record),
+      },
+      {
+        title: "Thao tác",
+        width: "15%",
+        render: (text, record) => this.renderThaoTacCanBo(record),
+      },
+      {
+        title: "Phòng ban",
+        width: "30%",
+        dataIndex: "TenCoQuan",
+        render: (text, record) => this.renderTenCoQuan(text, record),
+      },
+      {
+        title: "Thao tác",
+        width: "15%",
+        render: (text, record) => this.renderThaoTacCoQuan(record),
+      },
+    ];
+
+    return (
+      <LayoutWrapper>
+        <PageHeader>Quản trị hệ thống</PageHeader>
+        <PageAction>
+          {role.add ? (
+            <Button type={"primary"} onClick={this.ThemCanBo}>
+              <UserAddOutlined /> Thêm mới
+            </Button>
+          ) : (
+            ""
+          )}
+        </PageAction>
+        <Styled className={"index"}>
+          <Box>
+            <Row className={"row-content"}>
+              <Col xs={24} md={24} lg={18} xl={20} className={"col-table"}>
+                <BoxFilter>
+                  <TreeSelect
+                    showSearch
+                    treeData={DanhSachCoQuan}
+                    defaultValue={filterData.CoQuanID}
+                    style={{ width: 200 }}
+                    dropdownStyle={{ maxHeight: 400, overflow: "auto" }}
+                    placeholder="Phòng ban"
+                    allowClear
+                    treeDefaultExpandAll
+                    onChange={(value) => this.onSearch(value, "CoQuanID")}
+                    notFoundContent={"Không có dữ liệu"}
+                    treeNodeFilterProp={"title"}
+                  />
+                  <Search
+                    placeholder={"Tìm kiếm cán bộ"}
+                    style={{ width: 300 }}
+                    allowClear
+                    onSearch={(value) => this.onSearch(value, "Keyword")}
+                    defaultValue={filterData.Keyword}
+                  />
+                </BoxFilter>
+                <BoxTable
+                  columns={column}
+                  rowKey={"CanBoID"}
+                  dataSource={DanhSachCanBo}
+                  pagination={{
+                    showSizeChanger: true, //show text: pageSize/page
+                    showTotal: (total, range) =>
+                      `Từ ${range[0]} đến ${range[1]} trên ${total}`,
+                    total: TotalRow, //test 100
+                    current: PageNumber, //current page
+                    pageSize: PageSize,
+                  }}
+                  loading={TableLoading}
+                  onChange={this.onTableChange}
+                  scroll={{ y: "calc(100vh - 400px)", x: 800 }}
+                />
+              </Col>
+              <Col xs={24} md={24} lg={6} xl={4} className={"col-qr"}>
+                <div className={"qr-container"}>
+                  <img
+                    src={QRCode}
+                    className={"img-qr"}
+                    style={{ width: 200, height: 200 }}
+                  />
+                  <div className={"action-qr"}>
+                    <Button type={"danger"} onClick={this.printQR}>
+                      <PrinterOutlined /> In
+                    </Button>
+                    <Button type={"primary"} onClick={this.downloadQR}>
+                      <DownloadOutlined /> Tải xuống
+                    </Button>
+                  </div>
+                </div>
+              </Col>
+            </Row>
+          </Box>
+          <ModalAddEditCanBo
+            key={modalKey}
+            visible={visibleModalCanBo}
+            dataEdit={dataEditCanBo}
+            DanhSachCoQuan={DanhSachCoQuan}
+            onCreate={this.submitModalCanBo}
+            onCancel={this.closeModalCanBo}
+            fileLimit={fileLimit}
+          />
+          <div ref={this.printRef} style={{ display: "none" }}>
+            <div style={{ width: "100%", textAlign: "center" }}>
+              <img
+                style={{ marginTop: "20%", width: 400, height: 400 }}
+                src={QRCode}
+              />
+              <div style={{ marginTop: 20, fontWeight: "bold", fontSize: 30 }}>
+                {TenCoQuan}
+              </div>
+            </div>
+          </div>
+        </Styled>
+      </LayoutWrapper>
+    );
+  }
+}
+
+function mapStateToProps(state) {
+  return {
+    ...state.QuanTriHeThong,
+    role: getRoleByKey(state.Auth.role, "quan-tri-he-thong"),
+    defaultPassword: getConfigLocal("defaultPassword", 10),
+    fileLimit: getConfigLocal("fileLimit", 10),
+  };
+}
+
+export default connect(mapStateToProps, actions)(QuanTriAdminDonVi);

@@ -1,0 +1,3 @@
+2020-05-12 14:04:02.2127||INFO|Com.Gosol.TDNV.API.Controllers.DanhMuc.DanhMucTrangThaiController|Object reference not set to an instance of an object. |url: https://localhost/api/v1/DanhMucTrangThai/GetListPaging|action: GetListPaging
+2020-05-12 14:08:36.1953||INFO|Com.Gosol.TDNV.API.Controllers.DanhMuc.DanhMucTrangThaiController|Index was outside the bounds of the array. |url: https://localhost/api/v1/danhmuctrangthai/getbyid|action: GetByID
+2020-05-12 14:10:36.6658||INFO|Com.Gosol.TDNV.API.Controllers.DanhMuc.DanhMucTrangThaiController|Procedure or function v1_DanhMuc_TrangThai_GetByID has too many arguments specified. |url: https://localhost/api/v1/danhmuctrangthai/getbyid|action: GetByID

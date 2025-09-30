@@ -1,0 +1,197 @@
+import React, {Component} from "react";
+import {Link, Redirect} from "react-router-dom";
+import {connect} from "react-redux";
+// import Input from "../../components/uielements/input";
+import Checkbox from "../../components/uielements/checkbox";
+import Button from "../../components/uielements/button";
+import authAction from "../../redux/auth/actions";
+import appAction from "../../redux/app/actions";
+import Auth0 from "../../helpers/auth0";
+import Firebase from "../../helpers/firebase";
+import FirebaseLogin from "../../components/firebase";
+import IntlMessages from "../../components/utility/intlMessages";
+import SignInStyleWrapper from "./signin.style";
+import {Row, Col, Icon, Tooltip, Modal, Input} from "antd";
+import iconGo from "../../image/logoGo.png";
+import lock from "../../image/lock.png";
+import api from "./config"
+import {isFullLocalStorage} from "../../helpers/utility";
+import "./style.css";
+
+const {login} = authAction;
+const {clearMenu, getNotifications} = appAction;
+const date = new Date();
+const currentYear = date.getFullYear();
+
+class SignIn extends Component {
+  constructor(props) {
+    document.title = 'Đăng nhập hệ thống';
+    super(props);
+  }
+
+  state = {
+    confirmLoading: false,
+    username: "",
+    password: "",
+    messageError: ""
+  };
+
+  //Get initData---------------------------------------------
+  componentDidMount = () => {
+    // api.getDataConfig({ConfigKey: "Thong_Tin_Ho_Tro"})
+    //   .then(response => {
+    //     if(response.data && response.data.Status > 0 && response.data.Data.ConfigValue) {
+    //       //addressString -> sdt;fax;email
+    //       let addressArray = response.data.Data.ConfigValue.split(";",3);
+    //       api.getDataConfig({ConfigKey: "Ten_Don_Vi"})
+    //         .then(response2 => {
+    //           if(response2.data.Status > 0) {
+    //             this.setState({
+    //               TenDonVi: response2.data.Data.ConfigValue,
+    //               address: {
+    //                 phoneNumber: addressArray[0] ? addressArray[0] : "----.----.---",
+    //                 fax: addressArray[1] ? addressArray[1] : "----.----.---",
+    //                 email: addressArray[2] ? addressArray[2] : "----@gosol.com.vn",
+    //               }
+    //             });
+    //           }
+    //         });
+    //     }
+    //   });
+  };
+
+  handleLogin = () => {
+    this.setState({confirmLoading: true}, () => {
+      setTimeout(() => {
+        const username = this.state.username;
+        const password = this.state.password;
+        //check api
+        if (username && password) {
+          const data = {
+            UserName: username,
+            Password: password
+          };
+          api.dangNhap(data)
+            .then((response) => {
+              if (response.data.Status > 0) {
+                const dataLogin = response.data;
+                this.setState({
+                  confirmLoading: false,
+                  username: "",
+                  password: "",
+                  messageError: ""
+                }, () => {
+                  const {login, clearMenu} = this.props;
+                  login(dataLogin);
+                  clearMenu();
+                });
+              } else {
+                this.setState({
+                  confirmLoading: false,
+                  messageError: response.data.Message
+                });
+              }
+            }).catch(error => {
+            this.systemError()
+          });
+        } else {
+          this.setState({
+            confirmLoading: false,
+            messageError: "Vui lòng nhập đầy đủ thông tin!"
+          });
+        }
+      }, 500);
+    });
+  };
+  setUsername = (value) => {
+    this.setState({username: value});
+  };
+  setPassword = (value) => {
+    this.setState({password: value});
+  };
+  _handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      this.handleLogin();
+    }
+  };
+  systemError = () => {
+    this.setState({
+      confirmLoading: false
+    });
+    Modal.error({
+      title: 'Không thể đăng nhập',
+      content: 'Đã có lỗi xảy ra ...',
+    });
+  };
+
+  render() {
+    const {messageError, username, password, confirmLoading} = this.state;
+
+    const from = {pathname: "/dashboard/checkin-out"};
+    //reduxStorage data -> this.props.reducerToken
+    const reduxStorageNotNull = this.props.reducerToken !== null;
+    const localStorageNotNull = isFullLocalStorage();
+    const isLoggedIn = reduxStorageNotNull || localStorageNotNull;
+    if (isLoggedIn) {
+      return <Redirect to={from}/>;
+    } else {
+      localStorage.clear();
+    }
+    return (
+      <div className="isoSignInPage">
+        <div className={"title-login"}>
+          PHẦN MỀM QUẢN LÝ VÀO RA
+        </div>
+        <div className={'main-login'}>
+          <div className={'main-title'}>
+            Đăng nhập hệ thống
+          </div>
+          <div className={'main-body'}>
+            <Row>
+              <div id={'colLock'}>
+                <img src={lock} alt={"lock"}/>
+              </div>
+              <div id={'colInput'}>
+                <div className={"login-input"}>
+                  <div className={"input-row"}>
+                    <div className={"label-col"}>Tên người dùng: </div>
+                    <div>
+                      <Input value={username}
+                             placeholder="Tên đăng nhập"
+                             onChange={input => this.setUsername(input.target.value)}
+                             onKeyDown={this._handleKeyDown} className={'txtLogin'}/>
+                    </div>
+                  </div>
+                  <div className={"input-row"}>
+                    <div className={"label-col"}>Mật khẩu: </div>
+                    <Input.Password value={password}
+                                    placeholder="Mật khẩu"
+                                    onChange={input => this.setPassword(input.target.value)}
+                                    onKeyDown={this._handleKeyDown} className={'txtLogin'}/>
+                  </div>
+                  <div className={'btnLogin'}>
+                    <Button type={'primary'} onClick={this.handleLogin} loading={confirmLoading}>Đăng
+                      nhập {!confirmLoading ? <Icon type={'login'}/> : ""}</Button>
+                  </div>
+                </div>
+              </div>
+            </Row>
+          </div>
+          <div className={'main-error'}>{messageError}</div>
+        </div>
+        <div className="footer-login">
+          <img src={iconGo} alt="" width={40} style={{marginRight: 10}}/>
+          <i>Copyright © 2010-{currentYear} GO SOLUTIONS. All rights</i>
+        </div>
+      </div>
+    );
+  }
+}
+
+export default connect(
+  state => ({
+    reducerToken: state.Auth.idToken
+    //da dang nhap khi co reduce idToken hoac co localStore
+  }),
+  {login, clearMenu, getNotifications}
+)(SignIn);

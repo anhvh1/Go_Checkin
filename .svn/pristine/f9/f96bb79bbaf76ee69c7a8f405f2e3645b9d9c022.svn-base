@@ -1,0 +1,187 @@
+import React, {Component} from 'react';
+import {Col, Form, message, Row} from 'antd';
+import {Select, Input, Modal, Button, Option} from "../../../components/uielements/exportComponent";
+import Constants from '../../../settings/constants';
+import {upperFirstLetter} from '../../../helpers/utility';
+import api from "../QuanTriHeThong/config";
+import Styled from './styled';
+
+const {REQUIRED,} = Constants;
+const {Item} = Form;
+
+export default Form.create({name: 'modal_add_edit_taikhoan'})(
+  class extends Component {
+    constructor(props) {
+      super(props);
+      this.state = {
+        DanhSachHuyen: [],
+        DanhSachXa: []
+      };
+    }
+
+    onOk = (e) => {
+      e.preventDefault();
+      this.props.form.validateFields((err, value) => {
+        if (!err) {
+          const {onCreate} = this.props;
+          value.TenCanBo = upperFirstLetter(value.TenCanBo);
+          onCreate(value);
+        }
+      });
+    };
+
+    componentDidMount() {
+      const {dataEdit} = this.props;
+      if (dataEdit.CoQuanID) {
+        this.props.form.setFieldsValue({...dataEdit});
+        this.onChangeTinh(dataEdit.TinhID, false);
+        this.onChangeHuyen(dataEdit.HuyenID, false);
+      }
+    }
+
+    onCancel = () => {
+      const {onCancel} = this.props;
+      onCancel();
+    };
+
+    inputNum = (e) => {
+      const key = e.charCode;
+      if (key < 48 || key > 57) {
+        e.preventDefault();
+      }
+    };
+
+    onChangeTinh = (TinhID, reset = true) => {
+      if (TinhID) {
+        api.DanhSachDiaGioi({ID: TinhID, Cap: Constants.HUYEN}).then(response => {
+          if (response.data.Status > 0) {
+            this.setState({DanhSachHuyen: response.data.Data}, () => {
+              reset && this.props.form.setFieldsValue({HuyenID: undefined, XaID: undefined});
+            });
+            reset && this.setState({DanhSachXa: []});
+          } else {
+            message.destroy();
+            message.error(response.data.Message);
+          }
+        }).catch(error => {
+          message.destroy();
+          message.error(error.toString());
+        });
+      } else {
+        this.setState({DanhSachHuyen: [], DanhSachXa: []}, () => {
+          reset && this.props.form.setFieldsValue({HuyenID: undefined, XaID: undefined});
+        });
+      }
+    };
+
+    onChangeHuyen = (HuyenID, reset = true) => {
+      if (HuyenID) {
+        api.DanhSachDiaGioi({ID: HuyenID, Cap: Constants.XA}).then(response => {
+          if (response.data.Status > 0) {
+            this.setState({DanhSachXa: response.data.Data}, () => {
+              reset && this.props.form.setFieldsValue({XaID: undefined});
+            });
+          } else {
+            message.destroy();
+            message.error(response.data.Message);
+          }
+        }).catch(error => {
+          message.destroy();
+          message.error(error.toString());
+        });
+      } else {
+        this.setState({DanhSachXa: []}, () => {
+          reset && this.props.form.setFieldsValue({XaID: undefined});
+        });
+      }
+    };
+
+    render() {
+      const {visible, onCancel, form, dataEdit, loading, DanhSachTinh} = this.props;
+      const {DanhSachHuyen, DanhSachXa} = this.state;
+      const {getFieldDecorator} = form;
+      const FORMLAYOUT = {labelCol: 24, wrapperCol: 24};
+
+      return (
+        <Modal
+          top={30}
+          title={`${dataEdit.CoQuanID ? 'Sửa' : 'Thêm'} thông tin đơn vị`}
+          width={650}
+          onCancel={this.onCancel}
+          visible={visible}
+          footer={[
+            <Button key="back" onClick={onCancel}>Hủy</Button>,
+            <Button key="submit" htmlType="submit" type="primary" form="formsp"
+                    onClick={this.onOk} loading={loading}>Lưu</Button>,
+          ]}
+        >
+          <Styled className={'modal'}>
+            <Form id="formsp">
+              {getFieldDecorator('CoQuanID', {initialValue: null})}
+              {getFieldDecorator('CanBoID', {initialValue: null})}
+              {getFieldDecorator('NguoiDungID', {initialValue: null})}
+              {getFieldDecorator('TrangThai', {initialValue: true})}
+              <Item {...FORMLAYOUT} label={'Tên đơn vị'}>
+                {getFieldDecorator('TenCoQuan', {rules: [{...REQUIRED}], initialValue: ""})
+                (<Input className={'required'} autoFocus/>)}
+              </Item>
+              <Row>
+                <Col span={8} style={{paddingRight: 10}}>
+                  <Item {...FORMLAYOUT} label={'Tỉnh/Thành phố'}>
+                    {getFieldDecorator('TinhID', {rules: [{...REQUIRED}], initialValue: undefined})
+                    (
+                      <Select onChange={this.onChangeTinh} showSearch>
+                        {DanhSachTinh.map(item => <Option value={item.ID}>{item.Ten}</Option>)}
+                      </Select>
+                    )}
+                  </Item>
+                </Col>
+                <Col span={8}>
+                  <Item {...FORMLAYOUT} label={'Quận/Huyện'}>
+                    {getFieldDecorator('HuyenID', {rules: [{...REQUIRED}], initialValue: undefined})
+                    (<Select onChange={this.onChangeHuyen} showSearch>
+                      {DanhSachHuyen.map(item => <Option value={item.ID}>{item.Ten}</Option>)}
+                    </Select>)}
+                  </Item>
+                </Col>
+                <Col span={8} style={{paddingLeft: 10}}>
+                  <Item {...FORMLAYOUT} label={'Xã/Phường'}>
+                    {getFieldDecorator('XaID', {rules: [{...REQUIRED}], initialValue: undefined})
+                    (<Select showSearch>
+                      {DanhSachXa.map(item => <Option value={item.ID}>{item.Ten}</Option>)}
+                    </Select>)}
+                  </Item>
+                </Col>
+              </Row>
+              <Item {...FORMLAYOUT} label={'Địa chỉ đơn vị'}>
+                {getFieldDecorator('DiaChi', {initialValue: ""})
+                (<Input/>)}
+              </Item>
+              <Item {...FORMLAYOUT} label={'Họ và tên quản trị'}>
+                {getFieldDecorator('TenCanBo', {rules: [{...REQUIRED}], initialValue: ""})
+                (<Input style={{textTransform: "capitalize"}}/>)}
+              </Item>
+              <Item {...FORMLAYOUT} label={'Email liên hệ'}>
+                {getFieldDecorator('Email', {
+                  rules: [
+                    {...REQUIRED},
+                    {type: 'email', message: 'Email không đúng định dạng'}
+                  ], initialValue: ""
+                })
+                (<Input/>)}
+              </Item>
+              {dataEdit.CoQuanID ? <Item {...FORMLAYOUT} label={'Tên người dùng'}>
+                {getFieldDecorator('TenNguoiDung', {rules: [{...REQUIRED}], initialValue: ""})
+                (<Input/>)}
+              </Item> : ""}
+              <Item {...FORMLAYOUT} label={'Số điện thoại'}>
+                {getFieldDecorator('DienThoai', {rules: [{...REQUIRED}], initialValue: ""})
+                (<Input maxLength={11} onKeyPress={this.inputNum}/>)}
+              </Item>
+            </Form>
+          </Styled>
+        </Modal>
+      );
+    }
+  },
+)

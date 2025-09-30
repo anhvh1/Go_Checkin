@@ -1,0 +1,82 @@
+{
+  "format": 1,
+  "restore": {
+    "D:\\GoSol\\PTPM\\PM2020\\InOut\\Server\\Com.Gosol.INOUT\\Com.Gosol.INOUT.Security\\Com.Gosol.INOUT.Security.csproj": {}
+  },
+  "projects": {
+    "D:\\GoSol\\PTPM\\PM2020\\InOut\\Server\\Com.Gosol.INOUT\\Com.Gosol.INOUT.Security\\Com.Gosol.INOUT.Security.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "D:\\GoSol\\PTPM\\PM2020\\InOut\\Server\\Com.Gosol.INOUT\\Com.Gosol.INOUT.Security\\Com.Gosol.INOUT.Security.csproj",
+        "projectName": "Com.Gosol.INOUT.Security",
+        "projectPath": "D:\\GoSol\\PTPM\\PM2020\\InOut\\Server\\Com.Gosol.INOUT\\Com.Gosol.INOUT.Security\\Com.Gosol.INOUT.Security.csproj",
+        "packagesPath": "C:\\Users\\HoangAnh\\.nuget\\packages\\",
+        "outputPath": "D:\\GoSol\\PTPM\\PM2020\\InOut\\Server\\Com.Gosol.INOUT\\Com.Gosol.INOUT.Security\\obj\\",
+        "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+        ],
+        "configFilePaths": [
+          "C:\\Users\\HoangAnh\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        ],
+        "originalTargetFrameworks": [
+          "netcoreapp3.0"
+        ],
+        "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "netcoreapp3.0": {
+            "targetAlias": "netcoreapp3.0",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        }
+      },
+      "frameworks": {
+        "netcoreapp3.0": {
+          "targetAlias": "netcoreapp3.0",
+          "dependencies": {
+            "Microsoft.AspNetCore.Http.Abstractions": {
+              "target": "Package",
+              "version": "[2.2.0, )"
+            },
+            "System.Data.SqlClient": {
+              "target": "Package",
+              "version": "[4.8.1, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "downloadDependencies": [
+            {
+              "name": "Microsoft.AspNetCore.App.Ref",
+              "version": "[3.0.1, 3.0.1]"
+            }
+          ],
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\5.0.302\\RuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}

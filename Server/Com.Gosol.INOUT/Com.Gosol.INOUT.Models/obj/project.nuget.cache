@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "oA1yGV/3JSO5cT1IrOXZCT45IPl1KlgyXfn/AkEvMV4z6dwZ0n8fFiU53/JFl2FbBBUTDFyS8C423rUNvC1g6A==",
+  "success": true,
+  "projectFilePath": "D:\\GoSol\\PTPM\\PM2020\\InOut\\Server\\Com.Gosol.INOUT\\Com.Gosol.INOUT.Models\\Com.Gosol.INOUT.Models.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\HoangAnh\\.nuget\\packages\\microsoft.aspnetcore.app.ref\\3.0.1\\microsoft.aspnetcore.app.ref.3.0.1.nupkg.sha512"
+  ],
+  "logs": []
+}
