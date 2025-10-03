@@ -31,6 +31,7 @@ import { store } from "../../../redux/store";
 import Redirect from "react-router/Redirect";
 import lodash from "lodash";
 import { getConfigLocal, socketConnect } from "../../../helpers/utility";
+import setting from "../../../settings/index";
 import {
   AuditOutlined,
   CalendarOutlined,
@@ -147,45 +148,55 @@ class CheckinOut extends Component {
   };
 
   handleConnectSocketScan = () => {
-    const socket = new WebSocket("ws://localhost:5431?key=123");
+    const socket = new WebSocket(`ws://localhost:${setting.socketPort}`);
     console.log("start connect websocket");
     // Khi mở kết nối
     socket.onopen = () => {
-      console.log("✅ Đã kết nối tới ws://localhost:5431");
+      console.log("socket connected port ");
+      // console.log(`✅ Đã kết nối tới ws://localhost:${setting.socketPort}`);
       // Gửi thử 1 message lên server (nếu cần)
       // socket.send("Hello Server");
     };
 
     // Khi nhận dữ liệu từ server
     socket.onmessage = (event) => {
-      this.changeLoadingDataScan(true);
       const data = JSON.parse(event.data);
-      console.log(data.status === "ALL_STEP_DONE", data.status);
-      if (data.status === "ALL_STEP_DONE") {
-        console.log("📩 Data nhận được done: " + JSON.parse(event.data));
-        console.log("link photo", data.cardObj.facePhoto);
+      if (data.EventName === "READ") {
+        this.changeLoadingDataScan(true);
+      }
+      if (data.EventName === "CARD_RESULT") {
         // this.changeLoadingDataScan(false);
         this.setState({
           loadingDataScan: false,
           dataCMT: {
             ...this.state.dataCMT,
-            HoVaTen: data.cardObj.fullName,
-            GioiTinh: data.cardObj.sex,
-            SoCMND: data.cardObj.identityNumber,
+            HoVaTen: data.PersonalInfo.personName,
+            GioiTinh: data.PersonalInfo.gender,
+            SoCMND: data.PersonalInfo.idCode,
             LoaiGiayTo: "CCCD",
-            HoKhau: data.cardObj.placeOfResidence,
-            SoCMND: data.cardObj.identityNumber,
+            HoKhau: data.PersonalInfo.residencePlace,
           },
-          // imageCMTTruoc: "data:image/jpeg;base64," + data.cardObj.sod,
-          imageChanDung: "data:image/jpeg;base64," + data.faceObj.faceImage,
+          imageChanDung: data.ChipFace,
         });
       }
+      if (data.Status === "FAILURE") {
+        // this.changeLoadingDataScan(false);
+        this.setState({
+          loadingDataScan: false,
+        });
+        message.destroy();
+        message.warning("Xảy ra lỗi trong quá trình đọc thông tin CCCD");
+      }
+      // if (data?.data?.img_data) {
+      //   this.setState({
+      //     imageChanDung: data.data.img_data,
+      //   });
+      // }
       //  else if (data.status === "FACE_CAPTURE_FAILURE") {
       //   this.changeLoadingDataScan(false);
       //   message.destroy();
       //   message.warning("Xảy ra lỗi trong quá trình quét thông tin từ CCCD");
       // }
-      console.log("📩 Data nhận được: " + JSON.parse(event.data));
     };
 
     // Khi có lỗi
@@ -218,7 +229,7 @@ class CheckinOut extends Component {
       container[0].addEventListener("scroll", this.ScrollContainer);
     //
     this.socket && this.socket.close();
-    this.connect();
+    // this.connect();
     //
     this.socketIO && this.socketIO.stop();
     this.socketIO = socketConnect();
@@ -274,36 +285,40 @@ class CheckinOut extends Component {
       this.socket.close();
     };
 
-    this.socket.onmessage = (data) => {
-      this.handleOnTemper(data);
-    };
+    // this.socket.onmessage = (data) => {
+    //   this.handleOnTemper(data);
+    // };
   };
 
-  handleOnTemper = (data) => {
-    try {
-      const temper = JSON.parse(data.data);
-      if (temper.status) {
-        temper.timeDate = moment(temper.time, "YYYYMMDDHHmmss");
-        temper.timeString = moment(temper.time, "YYYYMMDDHHmmss").format(
-          "DD/MM/YYYY HH:mm:ss"
-        );
-        console.log(temper.timeString, temper);
-        const { listTemper, temperUsing } = this.state;
-        if (temperUsing.time) {
-          listTemper.push(temper);
-          this.setState({ listTemper });
-        } else {
-          this.selectTemper(temper);
-        }
-      } else {
-        //Thông báo lỗi nếu socket trả về lỗi
-        // message.destroy();
-        // message.error(temper.detail);
-      }
-    } catch (e) {
-      console.log(e);
-    }
-  };
+  // handleOnTemper = (data) => {
+  //   console.log(typeof data.data, "typeof dataa", data);
+  //   if (typeof data.data !== "string") {
+  //     console.log("handle convert json");
+  //     try {
+  //       const temper = JSON.parse(data.data);
+  //       if (temper.status) {
+  //         temper.timeDate = moment(temper.time, "YYYYMMDDHHmmss");
+  //         temper.timeString = moment(temper.time, "YYYYMMDDHHmmss").format(
+  //           "DD/MM/YYYY HH:mm:ss"
+  //         );
+  //         console.log(temper.timeString, temper);
+  //         const { listTemper, temperUsing } = this.state;
+  //         if (temperUsing.time) {
+  //           listTemper.push(temper);
+  //           this.setState({ listTemper });
+  //         } else {
+  //           this.selectTemper(temper);
+  //         }
+  //       } else {
+  //         //Thông báo lỗi nếu socket trả về lỗi
+  //         // message.destroy();
+  //         // message.error(temper.detail);
+  //       }
+  //     } catch (e) {
+  //       console.log(e);
+  //     }
+  //   }
+  // };
 
   setDataOnSocket = (data) => {
     // console.log(data, 'from guest');
@@ -1675,30 +1690,31 @@ class CheckinOut extends Component {
                   <Col xl={8} lg={24}>
                     <div className={"camera-content"}>
                       <div className="content">
-                        {loadingTruoc ? (
-                          <LoadingOutlined />
-                        ) : imageCMTTruoc !== "" ? (
-                          <div className={"box-image"}>
-                            {imageCMTTruoc !== "" && !isCheckOut ? (
-                              <CloseOutlined
-                                className={"close-ico"}
-                                type={"close"}
-                                onClick={() => this.clearImage(1)}
+                        {
+                          loadingTruoc ? (
+                            <LoadingOutlined />
+                          ) : imageCMTTruoc !== "" ? (
+                            <div className={"box-image"}>
+                              {imageCMTTruoc !== "" && !isCheckOut ? (
+                                <CloseOutlined
+                                  className={"close-ico"}
+                                  type={"close"}
+                                  onClick={() => this.clearImage(1)}
+                                />
+                              ) : (
+                                ""
+                              )}
+                              <img
+                                src={imageCMTTruoc}
+                                alt="avatar"
+                                style={{ maxHeight: 130 }}
+                                id={"imgTruoc"}
                               />
-                            ) : (
-                              ""
-                            )}
-                            <img
-                              src={imageCMTTruoc}
-                              alt="avatar"
-                              style={{ maxHeight: 130 }}
-                              id={"imgTruoc"}
-                            />
-                          </div>
-                        ) : (
-                          contentCameraEmpty
-                        )}
-                        <div
+                            </div>
+                          ) : null
+                          // contentCameraEmpty
+                        }
+                        {/* <div
                           style={{
                             display:
                               imageCMTTruoc === "" && !isCheckOut
@@ -1707,7 +1723,7 @@ class CheckinOut extends Component {
                           }}
                         >
                           {cameraContentScan}
-                        </div>
+                        </div> */}
                       </div>
                       <div className="action">
                         <Button
@@ -1725,24 +1741,25 @@ class CheckinOut extends Component {
                   <Col xl={8} lg={24}>
                     <div className={"camera-content"}>
                       <div className="content">
-                        {loadingChanDung ? (
-                          <LoadingOutlined />
-                        ) : imageChanDung !== "" ? (
-                          <div className={"box-image"}>
-                            <CloseOutlined
-                              className={"close-ico"}
-                              type={"close"}
-                              onClick={() => this.clearImage(3)}
-                            />
-                            <img
-                              src={imageChanDung}
-                              alt="avatar"
-                              style={{ maxHeight: 130 }}
-                            />
-                          </div>
-                        ) : (
-                          contentCameraEmpty
-                        )}
+                        {
+                          loadingChanDung ? (
+                            <LoadingOutlined />
+                          ) : imageChanDung !== "" ? (
+                            <div className={"box-image"}>
+                              <CloseOutlined
+                                className={"close-ico"}
+                                type={"close"}
+                                onClick={() => this.clearImage(3)}
+                              />
+                              <img
+                                src={imageChanDung}
+                                alt="avatar"
+                                style={{ maxHeight: 130 }}
+                              />
+                            </div>
+                          ) : null
+                          // contentCameraEmpty
+                        }
                         {/* <div
                           className={"camera-canvas"}
                           style={{

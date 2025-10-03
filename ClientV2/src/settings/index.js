@@ -11,6 +11,7 @@ export default {
   // apiImage: 'https://ocrcore.gosol.com.vn/ocr-doc/',
   apiImage: "https://ocrcorev1.gosol.com.vn/ekyc/",
   apiSocket: "https://apigocheckinv4.gosol.com.vn/SocketHub",
+  socketPort: "8000",
 };
 const siteConfig = {
   siteName: "Quản lý vào ra",
