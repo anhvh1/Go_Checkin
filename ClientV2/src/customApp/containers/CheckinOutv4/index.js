@@ -94,7 +94,7 @@ class CheckinOut extends Component {
         GioiTinh: undefined,
         ThanNhiet: "",
         LoaiGiayTo: "",
-        LyDoGap: undefined,
+        LyDoGap: 3,
         LyDoKhac: "",
       },
       loading: false,
@@ -147,8 +147,19 @@ class CheckinOut extends Component {
     this.setState({ ...this.state, loadingDataScan: loading });
   };
 
+  isJsonString = (str) => {
+    try {
+      const parsed = JSON.parse(str);
+      // JSON.parse chỉ parse thành công nếu là JSON thật sự (object, array, number, etc.)
+      return typeof parsed === "object" && parsed !== null;
+    } catch (e) {
+      return false;
+    }
+  };
+
   handleConnectSocketScan = () => {
     const socket = new WebSocket(`ws://localhost:${setting.socketPort}`);
+    this.socket = socket;
     console.log("start connect websocket");
     // Khi mở kết nối
     socket.onopen = () => {
@@ -159,8 +170,8 @@ class CheckinOut extends Component {
     };
 
     // Khi nhận dữ liệu từ server
-    socket.onmessage = (event) => {
-      const data = JSON.parse(event.data);
+    this.socket.onmessage = (event) => {
+      const data = this.isJsonString(event.data) ? JSON.parse(event.data) : {};
       if (data.EventName === "READ") {
         this.changeLoadingDataScan(true);
       }
@@ -200,16 +211,63 @@ class CheckinOut extends Component {
     };
 
     // Khi có lỗi
-    socket.onerror = (error) => {
+    this.socket.onerror = (error) => {
       this.changeLoadingDataScan(false);
       console.log("❌ Lỗi: " + error);
     };
 
     // Khi kết nối đóng
-    socket.onclose = () => {
+    this.socket.onclose = (event) => {
       this.changeLoadingDataScan(false);
+      this.logEventErrorSocket(event);
       console.log("🔌 Kết nối đã đóng");
     };
+  };
+
+  logEventErrorSocket = (event) => {
+    let reason = "";
+    if (event.code == 1000)
+      reason =
+        "Normal closure, meaning that the purpose for which the connection was established has been fulfilled.";
+    else if (event.code == 1001)
+      reason =
+        'An endpoint is "going away", such as a server going down or a browser having navigated away from a page.';
+    else if (event.code == 1002)
+      reason =
+        "An endpoint is terminating the connection due to a protocol error";
+    else if (event.code == 1003)
+      reason =
+        "An endpoint is terminating the connection because it has received a type of data it cannot accept (e.g., an endpoint that understands only text data MAY send this if it receives a binary message).";
+    else if (event.code == 1004)
+      reason = "Reserved. The specific meaning might be defined in the future.";
+    else if (event.code == 1005)
+      reason = "No status code was actually present.";
+    else if (event.code == 1006)
+      reason =
+        "The connection was closed abnormally, e.g., without sending or receiving a Close control frame";
+    else if (event.code == 1007)
+      reason =
+        "An endpoint is terminating the connection because it has received data within a message that was not consistent with the type of the message (e.g., non-UTF-8 [https://www.rfc-editor.org/rfc/rfc3629] data within a text message).";
+    else if (event.code == 1008)
+      reason =
+        'An endpoint is terminating the connection because it has received a message that "violates its policy". This reason is given either if there is no other sutible reason, or if there is a need to hide specific details about the policy.';
+    else if (event.code == 1009)
+      reason =
+        "An endpoint is terminating the connection because it has received a message that is too big for it to process.";
+    else if (event.code == 1010)
+      // Note that this status code is not used by the server, because it can fail the WebSocket handshake instead.
+      reason =
+        "An endpoint (client) is terminating the connection because it has expected the server to negotiate one or more extension, but the server didn't return them in the response message of the WebSocket handshake. <br /> Specifically, the extensions that are needed are: " +
+        event.reason;
+    else if (event.code == 1011)
+      reason =
+        "A server is terminating the connection because it encountered an unexpected condition that prevented it from fulfilling the request.";
+    else if (event.code == 1015)
+      reason =
+        "The connection was closed due to a failure to perform a TLS handshake (e.g., the server certificate can't be verified).";
+    else reason = "Unknown reason";
+    console.log(reason);
+    return reason;
   };
 
   //Get initData---------------------------------------------
@@ -228,15 +286,14 @@ class CheckinOut extends Component {
     container[0] &&
       container[0].addEventListener("scroll", this.ScrollContainer);
     //
-    this.socket && this.socket.close();
     // this.connect();
     //
-    this.socketIO && this.socketIO.stop();
-    this.socketIO = socketConnect();
-    await this.socketIO.start();
-    this.socketIO.on("scan", (data) => {
-      this.setDataOnSocket(data);
-    });
+    // this.socketIO && this.socketIO.stop();
+    // this.socketIO = socketConnect();
+    // await this.socketIO.start();
+    // this.socketIO.on("scan", (data) => {
+    //   this.setDataOnSocket(data);
+    // });
     // get list temper wait from app
     this.getListTemperFromTopBar();
     //
@@ -250,8 +307,9 @@ class CheckinOut extends Component {
     clearInterval(this.interval);
     clearInterval(this.videoCapture);
     this.socket && this.socket.close();
+    console.log("close socket");
     //
-    this.socketIO && this.socketIO.stop();
+    // this.socketIO && this.socketIO.stop();
     //
     const { listTemper } = this.state;
     if (listTemper.length) {
@@ -259,36 +317,36 @@ class CheckinOut extends Component {
     }
   }
 
-  connect = () => {
-    this.socket = new WebSocket("ws://localhost:8000");
+  // connect = () => {
+  //   this.socket = new WebSocket("ws://localhost:8000");
 
-    // websocket onopen event listener
-    this.socket.onopen = () => {
-      console.log("Socket temperate connected");
-    };
+  //   // websocket onopen event listener
+  //   this.socket.onopen = () => {
+  //     console.log("Socket temperate connected");
+  //   };
 
-    // websocket onclose event listener
-    this.socket.onclose = (e) => {
-      console.log("Socket temperate disconnected", e);
-    };
+  //   // websocket onclose event listener
+  //   this.socket.onclose = (e) => {
+  //     console.log("Socket temperate disconnected", e);
+  //   };
 
-    // websocket onerror event listener
-    this.socket.onerror = (err) => {
-      // message.destroy();
-      // message.error(err.message);
-      console.error(
-        "Socket temperate encountered error: ",
-        err,
-        "Closing socket temperate"
-      );
+  //   // websocket onerror event listener
+  //   this.socket.onerror = (err) => {
+  //     // message.destroy();
+  //     // message.error(err.message);
+  //     console.error(
+  //       "Socket temperate encountered error: ",
+  //       err,
+  //       "Closing socket temperate"
+  //     );
 
-      this.socket.close();
-    };
+  //     this.socket.close();
+  //   };
 
-    // this.socket.onmessage = (data) => {
-    //   this.handleOnTemper(data);
-    // };
-  };
+  //   // this.socket.onmessage = (data) => {
+  //   //   this.handleOnTemper(data);
+  //   // };
+  // };
 
   // handleOnTemper = (data) => {
   //   console.log(typeof data.data, "typeof dataa", data);
@@ -555,12 +613,12 @@ class CheckinOut extends Component {
           });
           //
           const dataSocket = response.data.Data;
-          if (this.socketIO.connectionState === "Connected") {
-            this.socketIO.invoke("scan", {
-              ...dataSocket,
-              sessionCode: param.sessionCode,
-            });
-          }
+          // if (this.socketIO.connectionState === "Connected") {
+          //   this.socketIO.invoke("scan", {
+          //     ...dataSocket,
+          //     sessionCode: param.sessionCode,
+          //   });
+          // }
         } else {
           this.setState({ loading: false });
           message.destroy();
@@ -649,13 +707,13 @@ class CheckinOut extends Component {
             }
           );
           //
-          const dataSocket = response.data.Data;
-          if (this.socketIO.connectionState === "Connected") {
-            this.socketIO.invoke("scan", {
-              ...dataSocket,
-              sessionCode: param.sessionCode,
-            });
-          }
+          // const dataSocket = response.data.Data;
+          // if (this.socketIO.connectionState === "Connected") {
+          //   this.socketIO.invoke("scan", {
+          //     ...dataSocket,
+          //     sessionCode: param.sessionCode,
+          //   });
+          // }
         } else {
           this.setState({ loading: false });
           message.destroy();
@@ -796,7 +854,7 @@ class CheckinOut extends Component {
       onOk: () => {
         const param = { ThongTinVaoRaID };
         api
-          .Checkout(param)
+          .Checkoutv4(param)
           .then((response) => {
             if (response.data.Status > 0) {
               const dataCMT = {
@@ -1835,7 +1893,7 @@ class CheckinOut extends Component {
                         />
                       </Item>
                     </Col>
-                    <Col {...COL_ITEM_LAYOUT_HALF}>
+                    {/*<Col {...COL_ITEM_LAYOUT_HALF}>
                       <Row>
                         <Col {...COL_COL_ITEM_LAYOUT_RIGHT}>
                           <Item label={"Lý do gặp"} {...ITEM_LAYOUT_HALF}>
@@ -1854,77 +1912,71 @@ class CheckinOut extends Component {
                           </Item>
                         </Col>
                       </Row>
-                    </Col>
-                  </Row>
-                  <Row>
-                    <Col {...COL_ITEM_LAYOUT_HALF}>
-                      <Item
-                        label={"Giờ ra"}
-                        {...ITEM_LAYOUT_HALF}
-                        className={"datepicker"}
-                      >
-                        <Input
-                          placeholder={""}
-                          style={{ width: "30%", maxWidth: 100 }}
-                          value={
-                            isCheckOut
-                              ? moment(today).format("HH:mm")
-                              : valueGioRaHS
-                          }
-                          disabled
-                        />
-                        <Input
-                          placeholder={""}
-                          style={{
-                            width: "calc(70% - 20px)",
-                            marginLeft: 20,
-                            maxWidth: 180,
-                          }}
-                          value={
-                            isCheckOut
-                              ? moment(today).format("DD/MM/YYYY")
-                              : valueGioRaDMY
-                          }
-                          disabled
-                          suffix={<CalendarOutlined />}
-                        />
-                      </Item>
-                    </Col>
+                    </Col>*/}
                     <Col {...COL_ITEM_LAYOUT_HALF}>
                       <Row>
                         <Col {...COL_COL_ITEM_LAYOUT_RIGHT}>
-                          <Item label={"Mã thẻ"} {...ITEM_LAYOUT_HALF}>
-                            <PopoverCustom
-                              content={this.contentPopover(dataPopover, 1)}
-                              visible={visiblePopoverMaThe}
-                              trigger={"click"}
-                              onVisibleChange={this.changeVisiblePopoverMaThe}
-                              placement={"bottomLeft"}
-                            >
-                              <Input.Search
-                                style={{ width: "100%" }}
-                                onSearch={(value) => this.blurMaThe(value, 1)}
-                                maxLength={20}
-                                value={dataCMT.MaThe}
-                                placeholder={"Nhập mã thẻ"}
-                                onChange={(value) =>
-                                  this.changeValueCMT(
-                                    "MaThe",
-                                    value.target.value
-                                  )
-                                }
-                                id={"txtMaThe"}
-                                loading={loadingSearchMaThe}
-                                onKeyDown={this.selectIndex}
-                              />
-                            </PopoverCustom>
+                          <Item
+                            label={"Giờ ra"}
+                            {...ITEM_LAYOUT_HALF}
+                            className={"datepicker"}
+                          >
+                            <Input
+                              placeholder={""}
+                              style={{ width: "30%", maxWidth: 100 }}
+                              value={
+                                isCheckOut
+                                  ? moment(today).format("HH:mm")
+                                  : valueGioRaHS
+                              }
+                              disabled
+                            />
+                            <Input
+                              placeholder={""}
+                              style={{
+                                width: "calc(70% - 20px)",
+                                marginLeft: 20,
+                                maxWidth: 180,
+                              }}
+                              value={
+                                isCheckOut
+                                  ? moment(today).format("DD/MM/YYYY")
+                                  : valueGioRaDMY
+                              }
+                              disabled
+                              suffix={<CalendarOutlined />}
+                            />
                           </Item>
                         </Col>
                       </Row>
                     </Col>
                   </Row>
                   <Row>
-                    <Col {...COL_ITEM_LAYOUT_HALF} />
+                    <Col {...COL_ITEM_LAYOUT_HALF}>
+                      <Item label={"Mã thẻ"} {...ITEM_LAYOUT_HALF}>
+                        <PopoverCustom
+                          content={this.contentPopover(dataPopover, 1)}
+                          visible={visiblePopoverMaThe}
+                          trigger={"click"}
+                          onVisibleChange={this.changeVisiblePopoverMaThe}
+                          placement={"bottomLeft"}
+                        >
+                          <Input.Search
+                            style={{ width: "100%" }}
+                            onSearch={(value) => this.blurMaThe(value, 1)}
+                            maxLength={20}
+                            value={dataCMT.MaThe}
+                            placeholder={"Nhập mã thẻ"}
+                            onChange={(value) =>
+                              this.changeValueCMT("MaThe", value.target.value)
+                            }
+                            id={"txtMaThe"}
+                            loading={loadingSearchMaThe}
+                            onKeyDown={this.selectIndex}
+                          />
+                        </PopoverCustom>
+                      </Item>
+                    </Col>
                     <Col {...COL_ITEM_LAYOUT_HALF}>
                       <Row>
                         <Col {...COL_COL_ITEM_LAYOUT_RIGHT}>
@@ -1964,6 +2016,48 @@ class CheckinOut extends Component {
                         </Col>
                       </Row>
                     </Col>
+                  </Row>
+                  <Row>
+                    <Col {...COL_ITEM_LAYOUT_HALF} />
+                    {/* <Col {...COL_ITEM_LAYOUT_HALF}>
+                      <Row>
+                        <Col {...COL_COL_ITEM_LAYOUT_RIGHT}>
+                          {dataCMT.LyDoGap === 2 ? (
+                            <Item label={"Đối tượng gặp"} {...ITEM_LAYOUT_HALF}>
+                              <TreeSelect
+                                noGetPopupContainer
+                                dropdownStyle={{ maxHeight: 300 }}
+                                value={dataCMT.GapCanBo}
+                                showSearch
+                                treeData={DoiTuongGap}
+                                placeholder="Chọn đối tượng cần gặp"
+                                allowClear
+                                treeDefaultExpandAll
+                                onChange={(value) => this.changeCanBo(value)}
+                              />
+                            </Item>
+                          ) : (
+                            ""
+                          )}
+                          {dataCMT.LyDoGap === 3 ? (
+                            <Item label={"Nội dung"} {...ITEM_LAYOUT_HALF}>
+                              <Input
+                                value={dataCMT.LyDoKhac}
+                                style={{ width: "100%" }}
+                                onChange={(value) =>
+                                  this.changeValueCMT(
+                                    "LyDoKhac",
+                                    value.target.value
+                                  )
+                                }
+                              />
+                            </Item>
+                          ) : (
+                            ""
+                          )}
+                        </Col>
+                      </Row>
+                    </Col> */}
                   </Row>
                 </Form>
               </div>
