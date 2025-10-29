@@ -581,7 +581,7 @@ class CheckinOut extends Component {
             NgayCapCMND: "",
             GapCanBo: undefined,
             MaThe: "",
-            LyDoGap: undefined,
+            LyDoGap: 3,
           };
           Modal.success({
             title: "Thông báo",
@@ -683,7 +683,7 @@ class CheckinOut extends Component {
             NgayCapCMND: "",
             GapCanBo: undefined,
             MaThe: "",
-            LyDoGap: undefined,
+            LyDoGap: 3,
           };
           let { filterData } = this.state;
           filterData.PageNumber = 1;
@@ -744,7 +744,7 @@ class CheckinOut extends Component {
             NgayCapCMND: "",
             GapCanBo: undefined,
             MaThe: "",
-            LyDoGap: undefined,
+            LyDoGap: 3,
             ThongTinVaoRaID: 0,
           };
           Modal.success({
@@ -809,7 +809,7 @@ class CheckinOut extends Component {
             NgayCapCMND: "",
             GapCanBo: undefined,
             MaThe: "",
-            LyDoGap: undefined,
+            LyDoGap: 3,
             ThongTinVaoRaID: 0,
           };
           let { filterData } = this.state;
@@ -867,7 +867,7 @@ class CheckinOut extends Component {
                 NgayCapCMND: "",
                 GapCanBo: undefined,
                 MaThe: "",
-                LyDoGap: undefined,
+                LyDoGap: 3,
               };
               Modal.success({
                 title: "Thông báo",
@@ -1067,7 +1067,7 @@ class CheckinOut extends Component {
               GioiTinh: undefined,
               ThanNhiet: "",
               LoaiGiayTo: "",
-              LyDoGap: undefined,
+              LyDoGap: 3,
               LyDoKhac: "",
             },
             loading: false,
@@ -1744,58 +1744,43 @@ class CheckinOut extends Component {
             <div className="box-container">
               <div className="box box-camera">
                 <Row gutter={24}>
-                  <Col xl={4} lg={0} />
+                  {/* <Col xl={4} lg={0} />
                   <Col xl={8} lg={24}>
                     <div className={"camera-content"}>
                       <div className="content">
-                        {
-                          loadingTruoc ? (
-                            <LoadingOutlined />
-                          ) : imageCMTTruoc !== "" ? (
-                            <div className={"box-image"}>
-                              {imageCMTTruoc !== "" && !isCheckOut ? (
-                                <CloseOutlined
-                                  className={"close-ico"}
-                                  type={"close"}
-                                  onClick={() => this.clearImage(1)}
-                                />
-                              ) : (
-                                ""
-                              )}
-                              <img
-                                src={imageCMTTruoc}
-                                alt="avatar"
-                                style={{ maxHeight: 130 }}
-                                id={"imgTruoc"}
+                        {loadingTruoc ? (
+                          <LoadingOutlined />
+                        ) : imageCMTTruoc !== "" ? (
+                          <div className={"box-image"}>
+                            {imageCMTTruoc !== "" && !isCheckOut ? (
+                              <CloseOutlined
+                                className={"close-ico"}
+                                type={"close"}
+                                onClick={() => this.clearImage(1)}
                               />
-                            </div>
-                          ) : null
-                          // contentCameraEmpty
-                        }
-                        {/* <div
-                          style={{
-                            display:
-                              imageCMTTruoc === "" && !isCheckOut
-                                ? "block"
-                                : "none",
-                          }}
-                        >
-                          {cameraContentScan}
-                        </div> */}
+                            ) : (
+                              ""
+                            )}
+                            <img
+                              src={imageCMTTruoc}
+                              alt="avatar"
+                              style={{ maxHeight: 130 }}
+                              id={"imgTruoc"}
+                            />
+                          </div>
+                        ) : null}
                       </div>
                       <div className="action">
                         <Button
-
-                        // disabled = {true}
-                        // disabled={videoInput.length === 0}
-                        // onClick={() => this.scanFile(1)}
+                          disabled={videoInput.length === 0}
+                          onClick={() => this.scanFile(1)}
                         >
                           <CameraOutlined />
                           Ảnh giấy tờ
                         </Button>
                       </div>
                     </div>
-                  </Col>
+                  </Col> */}
                   <Col xl={8} lg={24}>
                     <div className={"camera-content"}>
                       <div className="content">

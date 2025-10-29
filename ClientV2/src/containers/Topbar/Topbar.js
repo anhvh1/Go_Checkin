@@ -40,7 +40,7 @@ class Topbar extends Component {
   }
 
   componentDidMount() {
-    this.connect();
+    // this.connect();
   }
 
   componentWillUnmount() {
@@ -199,7 +199,7 @@ class Topbar extends Component {
     };
 
     this.socket.onmessage = (data) => {
-      this.handleOnTemper(data);
+      // this.handleOnTemper(data);
     };
   };
 

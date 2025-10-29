@@ -28,6 +28,9 @@ export class App extends Component {
     const { locale, selectedTheme, height } = this.props;
     const currentAppLocale = AppLocale[locale];
     const appHeight = window.innerHeight;
+    const lastPart = this.props.location?.pathname?.split("/")?.pop();
+    console.log(this.props.location, "this.props.location");
+    const screenCheckout = lastPart === "checkin-out";
     return (
       <ConfigProvider locale={currentAppLocale.antd}>
         <GlobalStyled />
@@ -48,7 +51,7 @@ export class App extends Component {
                     }
                   />
                 </Debounce>
-                <Topbar url={url} />
+                {!screenCheckout ? <Topbar url={url} /> : null}
                 <Layout
                   style={{ flexDirection: "row", overflow: "hidden" }}
                   className={"middleLayout"}
@@ -63,7 +66,7 @@ export class App extends Component {
                     <Content
                       className="isomorphicContent"
                       style={{
-                        padding: "45px 0 0",
+                        padding: !screenCheckout ? "45px 0 0" : "",
                         flexShrink: "0",
                         background: "#F9F9F9",
                         position: "relative",

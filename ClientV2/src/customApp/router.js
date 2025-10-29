@@ -7,9 +7,13 @@ const routes = [
     component: asyncComponent(() => import("./containers/Dashboard")),
   },
   //Checkin-out
+  // {
+  //   path: "checkin-out",
+  //   component: asyncComponent(() => import("./containers/CheckinOutv4")),
+  // },
   {
     path: "checkin-out",
-    component: asyncComponent(() => import("./containers/CheckinOutv4")),
+    component: asyncComponent(() => import("./containers/CheckinOutV5")),
   },
   //Báo cáo
   {
