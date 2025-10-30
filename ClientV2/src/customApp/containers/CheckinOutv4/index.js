@@ -40,7 +40,7 @@ import {
   LoadingOutlined,
   RedoOutlined,
 } from "@ant-design/icons";
-// import * as faceapi from "face-api.js";
+import * as faceapi from "face-api.js";
 
 const { changeCurrent, setListTemperWait, getListTemperFromSite } = appActions;
 const currentYear = new Date().getFullYear();
@@ -58,11 +58,12 @@ class CheckinOut extends Component {
     this.interval = null;
     this.webcamRefChanDung = React.createRef();
     this.webcamRefTruoc = React.createRef();
+    this.canvasRef = React.createRef();
     this.webcamRefSau = React.createRef();
     this.socket = null;
     this.socketIO = null;
-    this.canvasRef = React.createRef();
     this.videoCapture = null;
+    this.delayChamCong = null
     let filterData = queryString.parse(this.props.location.search);
     filterData.PageNumber = filterData.PageNumber ? filterData.PageNumber : 1;
     filterData.PageSize = 10;
@@ -78,6 +79,7 @@ class CheckinOut extends Component {
       recognitionTruoc: false,
       recognitionSau: false,
       recognitionChanDung: false,
+      delayCC: 0,
       today: today,
       dataCMT: {
         HoVaTen: "",
@@ -298,9 +300,20 @@ class CheckinOut extends Component {
     this.getListTemperFromTopBar();
     //
     const MODEL_URL = process.env.PUBLIC_URL + "/model";
-    // await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
-    // await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
-    // await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
+    await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+    await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+    await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
+
+    this.delayChamCong = setInterval(() => {
+      const newdelay = this.state.delayCC
+      if (newdelay > 0) {
+        newdelay--
+      }
+      this.setState({
+        delayCC : newdelay
+      })
+    }, 1000);
+
   };
 
   componentWillUnmount() {
@@ -632,6 +645,87 @@ class CheckinOut extends Component {
       });
   };
 
+  UpdateCheckIn = () => {
+    const param = { ...this.state.dataCMT };
+    param.NgaySinh =
+      param.NgaySinh !== ""
+        ? moment(param.NgaySinh, "DD/MM/YYYY").format("YYYY-MM-DD")
+        : "";
+    param.NgayCapCMND =
+      param.NgayCapCMND !== ""
+        ? moment(param.NgayCapCMND, "DD/MM/YYYY").format("YYYY-MM-DD")
+        : "";
+    param.AnhChanDungBase64 = this.state.imageChanDung;
+    param.AnhCMND_MTBase64 = this.state.imageCMTTruoc;
+    param.AnhCMND_MSBase64 = this.state.imageCMTSau;
+    delete param.GioVao;
+    this.setState({ loading: true });
+    api
+      .UpdateCheckinv4(param)
+      .then((response) => {
+        if (response.data.Status > 0) {
+          const dataCMT = {
+            HoVaTen: "",
+            NgaySinh: "",
+            HoKhau: "",
+            DienThoai: "",
+            SoCMND: "",
+            NoiCapCMND: "",
+            NgayCapCMND: "",
+            GapCanBo: undefined,
+            MaThe: "",
+            LyDoGap: 3,
+          };
+          Modal.success({
+            title: "Thông báo",
+            content: `Cập nhật checkin thành công`,
+            okText: "Đóng",
+            onOk: () => {
+              let { filterData } = this.state;
+              filterData.PageNumber = 1;
+              this.setState(
+                {
+                  dataCMT,
+                  loading: false,
+                  imageCMTTruoc: "",
+                  imageCMTSau: "",
+                  imageChanDung: "",
+                  isCheckIn: false,
+                  showCamera: true,
+                  ListCheckinLoaded: [],
+                  filterData,
+                  temperUsing: {},
+                },
+                () => {
+                  this.props.getList();
+                  this.GetListCheckin();
+                  // this.handlePlayChanDung();
+                }
+              );
+            },
+          });
+          //
+          const dataSocket = response.data.Data;
+          // if (this.socketIO.connectionState === "Connected") {
+          //   this.socketIO.invoke("scan", {
+          //     ...dataSocket,
+          //     sessionCode: param.sessionCode,
+          //   });
+          // }
+        } else {
+          this.setState({ loading: false });
+          message.destroy();
+          message.error(response.data.Message);
+        }
+      })
+      .catch((error) => {
+        this.setState({ loading: false });
+        message.destroy();
+        message.error(error.toString());
+      });
+  };
+
+
   CheckInv4 = () => {
     const param = { ...this.state.dataCMT };
     param.NgaySinh =
@@ -927,32 +1021,32 @@ class CheckinOut extends Component {
       });
       this.setState({
         imageCMTTruoc: base64,
-        loadingTruoc: false,
+        // loadingTruoc: false,
         recognitionTruoc: true,
       });
-      api
-        .UploadImage({ image: base64 })
-        .then((response) => {
-          if (response.data.result_code === 200) {
-            this.fillData(response.data, type);
-            this.setState({
-              recognitionTruoc: false,
-            });
-          } else if (response.data.result_code === 500) {
-            this.setState({ recognitionTruoc: false });
-            message.destroy();
-            message.error("Ảnh CMND mặt trước không hợp lệ");
-          } else {
-            this.setState({ recognitionTruoc: false });
-            message.destroy();
-            message.error(response.data.result_message);
-          }
-        })
-        .catch((error) => {
-          this.setState({ recognitionTruoc: false });
-          message.destroy();
-          message.error(error.toString());
-        });
+      // api
+      //   .UploadImage({ image: base64 })
+      //   .then((response) => {
+      //     if (response.data.result_code === 200) {
+      //       this.fillData(response.data, type);
+      //       this.setState({
+      //         recognitionTruoc: false,
+      //       });
+      //     } else if (response.data.result_code === 500) {
+      //       this.setState({ recognitionTruoc: false });
+      //       message.destroy();
+      //       message.error("Ảnh CMND mặt trước không hợp lệ");
+      //     } else {
+      //       this.setState({ recognitionTruoc: false });
+      //       message.destroy();
+      //       message.error(response.data.result_message);
+      //     }
+      //   })
+      //   .catch((error) => {
+      //     this.setState({ recognitionTruoc: false });
+      //     message.destroy();
+      //     message.error(error.toString());
+      //   });
     } else if (type === 2) {
       const base64 = this.webcamRefSau.current.getScreenshot({
         width: 1200,
@@ -989,6 +1083,70 @@ class CheckinOut extends Component {
     } else {
       this.Scan(type);
     }
+  };
+
+  checkBeforeSend = async () => {
+    if (!this.webcamRefTruoc.current) {
+      console.warn("Webcam chưa sẵn sàng");
+      return;
+    }
+    const base64Img = this.webcamRefTruoc.current.getScreenshot();
+    console.log(base64Img, "base64Img");
+
+    if (base64Img) {
+      this.setState({imageChanDung : base64Img , loadingChanDung : false })
+    }
+  };
+
+  handlePlay = () => {
+    console.log("handle play camera");
+    clearInterval(this.videoCapture);
+   
+    if (!this.canvasRef.current) {
+      return "";
+    }
+
+    this.videoCapture = setInterval(async () => {
+      // console.log(DanhSachPhamViSelected, "DanhSachPhamViSelected");
+      // if (DanhSachPhamViSelected.length === 0) {
+      //   return;
+      // }
+      const videoSource = document.getElementById("capture-camera");
+     
+      if (
+        videoSource &&
+        faceapi?.createCanvasFromMedia &&
+        this.canvasRef.current && !this.state.imageChanDung
+      ) {
+        this.canvasRef.current.innerHTML =
+          faceapi.createCanvasFromMedia(videoSource);
+        const displaySize = {
+          width: videoSource.offsetWidth,
+          height: videoSource.offsetHeight,
+        };
+        faceapi.matchDimensions(this.canvasRef.current, displaySize);
+        const detection = await faceapi.detectAllFaces(
+          videoSource,
+          new faceapi.TinyFaceDetectorOptions()
+        );
+
+        const resizedDetection = faceapi.resizeResults(detection, displaySize);
+
+        this.canvasRef &&
+          this.canvasRef.current &&
+          this.canvasRef.current
+            .getContext("2d")
+            .clearRect(0, 0, videoSource.width, videoSource.height);
+        faceapi.draw.drawDetections(this.canvasRef.current, resizedDetection);
+
+        if (detection.length) {
+          if (this.state.delayCC === 0) {
+            this.setState({loadingChanDung : true})
+            this.checkBeforeSend();
+          }
+        }
+      }
+    }, 1000);
   };
 
   triggerUpload = () => {
@@ -1168,6 +1326,7 @@ class CheckinOut extends Component {
   };
 
   loadDataCheckOut = (data) => {
+    console.log(data,'data')
     clearInterval(this.videoCapture);
     const dataCMT = lodash.cloneDeep(data);
     dataCMT.NgaySinh = dataCMT.NgaySinh ? moment(dataCMT.NgaySinh) : "";
@@ -1183,9 +1342,10 @@ class CheckinOut extends Component {
       isCheckOut: dataCMT.GioRa === null,
       dataCMT,
       checkCheckOut: dataCMT.GioRa !== null,
-      imageCMTTruoc: dataCMT.AnhCMND_MTBase64 ? dataCMT.AnhCMND_MTBase64 : "",
+      imageCMTTruoc: dataCMT.AnhChanDungBase64 ? dataCMT.AnhChanDungBase64 : "",
       imageCMTSau: dataCMT.AnhCMND_MSBase64 ? dataCMT.AnhCMND_MSBase64 : "",
       imageChanDung: dataCMT.AnhChanDungBase64 ? dataCMT.AnhChanDungBase64 : "",
+      // ThongTinVaoRaID: data.ThongTinVaoRaID
     });
   };
 
@@ -1501,8 +1661,8 @@ class CheckinOut extends Component {
         if (detection.length) {
           const AnhChanDungBase64 =
             this.webcamRefChanDung.current.getScreenshot({
-              width: 600,
-              height: 500,
+              width: 150,
+              height: 150,
             });
           api.NhanDien({ AnhChanDungBase64 }).then((response) => {
             const data = response && response.data;
@@ -1679,50 +1839,48 @@ class CheckinOut extends Component {
         : "";
 
     const videoConstraints = {
-      width: 1200,
-      height: 1000,
+      width: 185,
+      height: 185,
     };
     const deviceIDChanDung = videoInput.find((item) =>
       item.label.includes("USB CAM2")
     );
     const deviceIDScan = videoInput.find((item) => item.label.includes("S520"));
-    const cameraContentChanDung = (
-      <Webcam
-        audio={false}
-        id={"camera-chan-dung"}
-        ref={this.webcamRefChanDung}
-        screenshotFormat="image/jpeg"
-        videoConstraints={{
-          ...videoConstraints,
-          deviceId:
-            deviceIDChanDung && deviceIDChanDung.deviceId
-              ? deviceIDChanDung.deviceId
-              : "",
-        }}
-        key={
-          deviceIDChanDung && deviceIDChanDung.deviceId
-            ? deviceIDChanDung.deviceId
-            : ""
-        }
-        style={{ zoom: 0.15 }}
-        // onUserMedia={this.handlePlayChanDung}
-      />
-    );
 
     const cameraContentScan = (
-      <Webcam
-        audio={false}
-        ref={this.webcamRefTruoc}
-        screenshotFormat="image/jpeg"
-        videoConstraints={{
-          ...videoConstraints,
-          deviceId:
-            deviceIDScan && deviceIDScan.deviceId ? deviceIDScan.deviceId : "",
-          // facingMode: {exact: 'environment'},
-        }}
-        style={{ zoom: 0.15 }}
-        key={deviceIDScan && deviceIDScan.deviceId ? deviceIDScan.deviceId : ""}
-      />
+      <>
+        <div className={"camera-container"}>
+          <Webcam
+            audio={false}
+            id={"capture-camera"}
+            ref={this.webcamRefTruoc}
+            screenshotQuality={0.5}
+            onUserMedia={this.handlePlay}
+            screenshotFormat="image/jpeg"
+            videoConstraints={{
+              ...videoConstraints,
+              deviceId:
+                deviceIDScan && deviceIDScan.deviceId
+                  ? deviceIDScan.deviceId
+                  : "",
+            }}
+          />
+          <canvas id={"detect-canvas"} ref={this.canvasRef} />
+        </div>
+        {/* <Webcam
+            audio={false}
+            ref={this.webcamRefTruoc}
+            screenshotFormat="image/jpeg"
+            videoConstraints={{
+              ...videoConstraints,
+              deviceId:
+                deviceIDScan && deviceIDScan.deviceId ? deviceIDScan.deviceId : "",
+              // facingMode: {exact: 'environment'},
+            }}
+            style={{ zoom: 0.15 }}
+            key={deviceIDScan && deviceIDScan.deviceId ? deviceIDScan.deviceId : ""}
+          /> */}
+      </>
     );
 
     const contentCameraEmpty = isCheckOut ? (
@@ -1744,17 +1902,16 @@ class CheckinOut extends Component {
             <div className="box-container">
               <div className="box box-camera">
                 <Row gutter={24}>
-                  {/* <Col xl={4} lg={0} />
+                  <Col xl={4} lg={0} />
                   <Col xl={8} lg={24}>
                     <div className={"camera-content"}>
                       <div className="content">
-                        {loadingTruoc ? (
+                        {loadingChanDung ? (
                           <LoadingOutlined />
-                        ) : imageCMTTruoc !== "" ? (
+                        ) : imageChanDung !== "" ? (
                           <div className={"box-image"}>
-                            {imageCMTTruoc !== "" && !isCheckOut ? (
+                            {imageChanDung !== "" && !isCheckOut ? (
                               <CloseOutlined
-                                className={"close-ico"}
                                 type={"close"}
                                 onClick={() => this.clearImage(1)}
                               />
@@ -1762,26 +1919,37 @@ class CheckinOut extends Component {
                               ""
                             )}
                             <img
-                              src={imageCMTTruoc}
+                              src={imageChanDung}
                               alt="avatar"
                               style={{ maxHeight: 130 }}
                               id={"imgTruoc"}
                             />
                           </div>
-                        ) : null}
+                        ) : (
+                          contentCameraEmpty
+                        )}
+                        <div
+                          style={{
+                            display:
+                              imageChanDung === "" && !isCheckOut
+                                ? "block"
+                                : "none",
+                          }}
+                        >
+                          {cameraContentScan}
+                        </div>
                       </div>
                       <div className="action">
                         <Button
-                          disabled={videoInput.length === 0}
-                          onClick={() => this.scanFile(1)}
+                          // disabled={videoInput.length === 0}
+                          // onClick={() => this.scanFile(1)}
                         >
-                          <CameraOutlined />
-                          Ảnh giấy tờ
+                          <CameraOutlined />  Ảnh chân dung
                         </Button>
                       </div>
                     </div>
-                  </Col> */}
-                  <Col xl={8} lg={24}>
+                  </Col>
+                  {/* <Col xl={8} lg={24}>
                     <div className={"camera-content"}>
                       <div className="content">
                         {
@@ -1801,37 +1969,21 @@ class CheckinOut extends Component {
                               />
                             </div>
                           ) : null
-                          // contentCameraEmpty
+                          
                         }
-                        {/* <div
-                          className={"camera-canvas"}
-                          style={{
-                            display:
-                              imageChanDung === "" && !isCheckOut
-                                ? "flex"
-                                : "none",
-                          }}
-                        >
-                          {cameraContentChanDung}
-                          <canvas
-                            id={"detect-canvas"}
-                            ref={this.canvasRef}
-                            style={{ zoom: 0.15 }}
-                          />
-                        </div> */}
+                        
                       </div>
                       <div className="action">
                         <Button
 
-                        // disabled={true}
-                        // onClick={() => this.triggerUpload()}
+                       
                         >
                           <CameraOutlined />
                           Ảnh chân dung
                         </Button>
                       </div>
                     </div>
-                  </Col>
+                  </Col> */}
                   <Col xl={4} lg={0} />
                 </Row>
               </div>
@@ -2128,7 +2280,8 @@ class CheckinOut extends Component {
                       <Item
                         label={
                           <span>
-                            Số giấy tờ <span style={{ color: "red" }}>*</span>
+                            Số giấy tờ
+                             {/* <span style={{ color: "red" }}>*</span> */}
                           </span>
                         }
                         {...ITEM_LAYOUT_HALF}
@@ -2432,6 +2585,17 @@ class CheckinOut extends Component {
         </Row>
         <div className={"div-footer"}>
           <div className={"div-action"}>
+            {dataCMT.ThongTinVaoRaID ?  <Button
+              type={"primary"}
+              onClick={this.UpdateCheckIn}
+              disabled={
+               
+                dataCMT.ThongTinVaoRaID === ""
+                
+              }
+            >
+              Cập nhật checkin
+            </Button> : null}
             <Button
               type={"primary"}
               onClick={this.CheckIn}
@@ -2439,7 +2603,7 @@ class CheckinOut extends Component {
                 isCheckOut ||
                 loading ||
                 dataCMT.HoVaTen === "" ||
-                dataCMT.SoCMND === "" ||
+                // dataCMT.SoCMND === "" ||
                 role.add === 0 ||
                 user_id === 1
               }

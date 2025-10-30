@@ -6,6 +6,13 @@ export const MainWrapper = styled.div`
   min-height: 100vh;
   background: #fafbfc;
 
+  .face-wrapper {
+    display: flex;
+    gap: 40px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
   #capture-camera {
     border-radius: 50%;
   }
@@ -130,7 +137,7 @@ export const MainWrapper = styled.div`
       display: flex;
       flex-direction: column;
       gap: 18px;
-      min-height: 60vh;
+      min-height: 80vh;
       justify-content: flex-start;
       overflow-y: auto;
     }
@@ -179,7 +186,7 @@ export const MainWrapper = styled.div`
       display: flex;
       align-items: center;
       justify-content: center;
-      min-height: 60vh;
+      min-height: 80vh;
       font-size: 1.5rem;
       color: #aaa;
       font-weight: 500;

@@ -30,7 +30,7 @@ export class App extends Component {
     const appHeight = window.innerHeight;
     const lastPart = this.props.location?.pathname?.split("/")?.pop();
     console.log(this.props.location, "this.props.location");
-    const screenCheckout = lastPart === "checkin-out";
+    const screenCheckout = lastPart === "checkin-outv5";
     return (
       <ConfigProvider locale={currentAppLocale.antd}>
         <GlobalStyled />

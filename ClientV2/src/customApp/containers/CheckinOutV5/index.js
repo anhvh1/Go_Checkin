@@ -34,6 +34,10 @@ import setting from "../../../settings/index";
 import api from "./config";
 import axios from "axios";
 const { Title, Text } = Typography;
+const TYPE = {
+  ERROR : 1,
+  SUCCESS :2
+}
 export default function CheckinOutV5() {
   const [animateId, setAnimateId] = useState(null);
   const socketRef = useRef();
@@ -46,12 +50,18 @@ export default function CheckinOutV5() {
     PageSize: 10,
     TotalRow: null,
   });
-  const [totalCheckin, setTotalCheckin] = useState(0);
-  const [totalCheckout, setTotalCheckout] = useState(0);
   const [videoInput, setVideoInput] = useState([]);
   const [indexCamera, setIndexCamera] = useState(0);
   const [isLiveView, setIsLiveView] = useState(false);
   const [delayCC, setdelayCC] = useState(0);
+  const [totalCheckInOut, setTotalCheckinOut] = useState({
+    checkIn: 0,
+    checkOut: 0,
+  });
+  const [statusRes,setStatusRes] = useState({
+    message : 'Quý khách vui lòng quét CCCD để thực hiện checkin',
+    type : TYPE.ERROR, //1 = error, 2 = success
+  })
   const listCheckinRef = useRef(listCheckin);
   const filterDataRef = useRef(filterData);
   const webcamRef = useRef();
@@ -84,7 +94,7 @@ export default function CheckinOutV5() {
     await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
     await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
     await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
-
+    getTotalCheckInOut();
     return () => {
       clearInterval(videoCapture);
       clearInterval(delayChamCong);
@@ -97,6 +107,27 @@ export default function CheckinOutV5() {
     const timer = setTimeout(() => setAnimateId(null), 800);
     return () => clearTimeout(timer);
   }, [animateId]);
+
+  const getTotalCheckInOut = () => {
+    api
+      .TongHopNgay()
+      .then((res) => {
+        if (res.data.Status > 0) {
+          const data = res.data.Data;
+          setTotalCheckinOut({
+            checkIn: data.DangGap,
+            checkOut: data.DaVe,
+          });
+        } else {
+          message.destroy();
+          message.warning(res.data.Message);
+        }
+      })
+      .catch((err) => {
+        message.destroy();
+        message.warning(err.toString());
+      });
+  };
 
   const isJsonString = (str) => {
     try {
@@ -127,6 +158,14 @@ export default function CheckinOutV5() {
         setLoadingDataScan(true);
       }
 
+      if (data.EventName === "CARD" && data.NewState ==="EMPTY") {
+        setCurrentCheckin({})
+        setStatusRes({
+          message : 'Quý khách vui lòng quét CCCD để thực hiện checkin',
+          type : TYPE.ERROR, //1 = error, 2 = success
+        })
+      }
+
       if (data.EventName === "CARD_RESULT") {
         setLoadingDataScan(false);
         const checkinAt = Date.now();
@@ -142,14 +181,22 @@ export default function CheckinOutV5() {
           checkinAt,
           LyDoGap: 1,
         };
+        setStatusRes({
+          message : '',
+          type : null, //1 = error, 2 = success
+        })
         setCurrentCheckin(dataReaded);
         // CheckIn(dataReaded);
       }
       if (data.Status === "FAILURE") {
         // changeLoadingDataScan(false);
         setLoadingDataScan(false);
-        message.destroy();
-        message.warning("Xảy ra lỗi trong quá trình đọc thông tin CCCD");
+        // message.destroy();
+        setStatusRes({
+          message : 'Xảy ra lỗi trong quá trình đọc thông tin CCCD, vui lòng thử lại!',
+          type : TYPE.ERROR,
+        })
+        // message.warning("Xảy ra lỗi trong quá trình đọc thông tin CCCD");
       }
     };
 
@@ -226,7 +273,6 @@ export default function CheckinOutV5() {
   };
 
   const CheckIn = (currentCheckin) => {
-    console.log("handle checkin");
     const param = { ...currentCheckin };
     param.NgaySinh =
       param.NgaySinh !== ""
@@ -265,22 +311,27 @@ export default function CheckinOutV5() {
       .then((response) => {
         if (response.data.Status > 0) {
           setLoadingDataScan(false);
-          Modal.success({
-            title: "Thông báo",
-            content: `Checkin thành công`,
-            okText: "Đóng",
-            onOk: () => {
-              setFilterData((prevFilter) => ({ ...prevFilter, PageNumber: 1 }));
-              GetListCheckin({
-                ...filterData,
-                PageNumber: 1,
-              });
-            },
+          // message.destroy();
+          // message.success("Checkin thành công");
+          setStatusRes({
+            message : 'Checkin thành công!',
+            type : TYPE.SUCCESS,
+          })
+      
+          getTotalCheckInOut();
+          setFilterData((prevFilter) => ({ ...prevFilter, PageNumber: 1 }));
+          GetListCheckin({
+            ...filterData,
+            PageNumber: 1,
           });
         } else {
           setLoadingDataScan(false);
-          message.destroy();
-          message.error(response.data.Message);
+          // message.destroy();
+          // message.error(response.data.Message);
+          setStatusRes({
+            message : response.data.Message,
+            type : TYPE.ERROR,
+          })
         }
       })
       .catch((error) => {
@@ -338,30 +389,31 @@ export default function CheckinOutV5() {
   };
 
   const handleCompareFace = async (img) => {
+    setLoadingDataScan(true);
     setCurrentCheckin({ ...currentCheckin, FaceImg: img });
-    const response = await axios.post("http://localhost:8010/api/v4/compare", {
-      AnhCCCD: currentCheckin.imageChanDung,
-      AnhChanDung: img,
-    });
-
-    console.log("Response:", response.data);
-
-    // api
-    //   .CompareFace({
-    //     AnhCCCD: currentCheckin.imageChanDung,
-    //     AnhChanDung: img,
-    //   })
-    //   .then((res) => {
-    //     if (res.data.Status > 0) {
-    //       CheckIn(currentCheckin);
-    //     } else {
-    //       setLoadingCheckIn(false);
-    //       message.destroy();
-    //       message.warning(res.data.Message);
-    //     }
-    //   });
+    api
+      .CompareFace({
+        AnhCCCD: currentCheckin.imageChanDung,
+        AnhChanDung: img,
+      })
+      .then((res) => {
+        if (res.data.Score > 60) {
+          CheckIn(currentCheckin);
+        } else {
+          setLoadingDataScan(false);
+          setStatusRes({
+            message : res.data.Status,
+            type : TYPE.ERROR,
+          })
+          // setCurrentCheckin({});
+          setLoadingCheckIn(false);
+         
+        }
+      }).catch(err => {
+        setLoadingDataScan(false);
+      })
   };
-  console.log(currentCheckin, "currentCheckin");
+
   const checkBeforeSend = async () => {
     if (!webcamRef.current) {
       console.warn("Webcam chưa sẵn sàng");
@@ -397,6 +449,7 @@ export default function CheckinOutV5() {
       //   return;
       // }
       const videoSource = document.getElementById("capture-camera");
+      console.log(canvasRef.current,'canvasRef.current',videoSource,'videoSource',faceapi?.createCanvasFromMedia,'faceapi?.createCanvasFromMedia')
       if (videoSource && faceapi?.createCanvasFromMedia && canvasRef.current) {
         canvasRef.current.innerHTML =
           faceapi.createCanvasFromMedia(videoSource);
@@ -420,27 +473,15 @@ export default function CheckinOutV5() {
         faceapi.draw.drawDetections(canvasRef.current, resizedDetection);
         console.log(detection, "detection checkin", delayCC, "delayCC");
         if (detection.length) {
-          // if (delayCC === 0) {
-          //   checkBeforeSend();
-          // }
+          if (delayCC === 0) {
+            checkBeforeSend();
+          }
         }
       }
     }, 1000);
   };
 
   let deviceCamera = videoInput.length ? videoInput[indexCamera] : null;
-  const cameraCapabilities =
-    (deviceCamera && deviceCamera.getCapabilities()) || null;
-  const resolution = {
-    width:
-      cameraCapabilities && cameraCapabilities.width
-        ? cameraCapabilities.width.max
-        : 800,
-    height:
-      cameraCapabilities && cameraCapabilities.height
-        ? cameraCapabilities.height.max
-        : 600,
-  };
   const resolutionOfDiv = {
     width: 300,
     height: 300,
@@ -450,7 +491,7 @@ export default function CheckinOutV5() {
       <Webcam
         audio={false}
         id={"capture-camera"}
-        ref={webcamRef}
+        ref={!currentCheckin.FaceImg ? webcamRef : null}
         screenshotQuality={0.5}
         onUserMedia={handlePlay}
         screenshotFormat="image/jpeg"
@@ -468,7 +509,8 @@ export default function CheckinOutV5() {
     if (str.length <= 6) return str; // nếu chuỗi ngắn, không cần rút gọn
     return str.slice(0, 3) + "........." + str.slice(-3);
   };
-
+  const COLOR_SUCCESS = "#1E90FF"
+  const COLOR_ERROR = "#FF0000"
   return (
     <div>
       {/* CSS nhỏ gọn + hiệu ứng */}
@@ -481,21 +523,26 @@ export default function CheckinOutV5() {
             </div>
           ) : null}
 
-          <div className="greeting-title">Xin chào quý khách</div>
+          <div className="greeting-title" style = {{color : COLOR_SUCCESS}}>Xin chào quý khách</div>
           {currentCheckin.SoCMND ? (
             <>
-              {!isLiveView ? (
+              <div className="face-wrapper">
+                {!currentCheckin.FaceImg ? (
                 <div className="screen-wrapper">{cameraContentScan}</div>
               ) : (
                 <Avatar
-                  size={160}
-                  src={currentCheckin.imageChanDung}
+                  size={300}
+                  src={currentCheckin.FaceImg}
                   className="greeting-avatar"
                 />
               )}
-              <Button onClick={() => setIsLiveView(!isLiveView)}>
-                ChangeLiveView
-              </Button>
+               <Avatar
+                  size={300}
+                  src={currentCheckin.imageChanDung}
+                  className="greeting-avatar"
+                />
+              </div>
+
               <div className="greeting-name">{currentCheckin.HoVaTen}</div>
               <div className="greeting-cccd">
                 CCCD: {shortenNumberString(currentCheckin.SoCMND)}
@@ -503,23 +550,29 @@ export default function CheckinOutV5() {
               <div className="greeting-checkin">
                 Giờ checkin: {moment(currentCheckin.checkinAt).format("HH:mm")}
               </div>
+              {statusRes.message ? <h1 className="status-checkin" style={{color: statusRes.type === TYPE.ERROR ? COLOR_ERROR : COLOR_SUCCESS}}>
+                {statusRes.message}
+              </h1> : null}
             </>
           ) : (
             <>
-              <p className="greeting-prompt">
-                Quý khách vui lòng quét CCCD để thực hiện checkin
-              </p>
+            {statusRes.message ? <h1 className="status-checkin" style={{color: statusRes.type === TYPE.ERROR ? COLOR_ERROR : COLOR_SUCCESS}}>
+                {statusRes.message}
+              </h1> : null}
+              {/* <p className="greeting-prompt" style = {{color : COLOR_ERROR}}>
+               {statusRes.message ? statusRes.message : "Quý khách vui lòng quét CCCD để thực hiện checkin"}
+              </p> */}
             </>
           )}
 
           <div className="stats-row">
             <div className="stat-card">
               <span className="stat-label">Tổng số đã checkin</span>
-              {totalCheckin}
+              {totalCheckInOut.checkIn}
             </div>
             <div className="stat-card">
               <span className="stat-label">Đã checkout</span>
-              {totalCheckout}
+              {totalCheckInOut.checkOut}
             </div>
           </div>
         </div>
@@ -546,7 +599,7 @@ export default function CheckinOutV5() {
                       CCCD: {shortenNumberString(item.SoCMND)}
                     </div>
                     <div className="customer-checkin">
-                      Giờ checkin: {moment(item.checkinAt).format("HH:mm ")}
+                      Giờ checkin: {moment(item.GioVao).format("HH:mm ")}
                     </div>
                   </div>
                 </div>

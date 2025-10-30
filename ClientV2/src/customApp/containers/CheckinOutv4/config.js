@@ -12,6 +12,7 @@ const apiUrl = {
 
   checkin: server.apiInOut + 'VaoRa/Vao',
   checkinv4: server.apiInOutv4 + 'VaoRa/Vao',
+  updatecheckinv4: server.apiInOutv4 + 'VaoRa/UpdateThongTinVaoRa',
   checkout: server.apiInOut + 'VaoRa/Ra',
   checkoutv4: server.apiInOutv4 + 'VaoRa/Ra',
   danhsachcanbo: server.apiInOut + 'HeThongCanBo/DanhSachCanBo_TrongCoQuanSuDungPhanMem',
@@ -34,6 +35,9 @@ const api = {
   },
   Checkinv4: (param) => {
     return apiPostAuth(apiUrl.checkinv4, {...param});
+  },
+  UpdateCheckinv4: (param) => {
+    return apiPostAuth(apiUrl.updatecheckinv4, {...param});
   },
   Checkout: (param) => {
     return apiPostAuth(apiUrl.checkout, {...param});
