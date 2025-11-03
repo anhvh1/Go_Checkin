@@ -27,7 +27,7 @@ export const MainWrapper = styled.div`
 
   .left-panel {
     flex: 1.2;
-    min-height: 750px !important;
+    min-height: 400px !important;
     display: flex;
     flex-direction: column;
     align-items: center;
