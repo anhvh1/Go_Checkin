@@ -178,7 +178,6 @@ class CheckinOut extends Component {
         this.changeLoadingDataScan(true);
       }
       if (data.EventName === "CARD_RESULT") {
-        // this.changeLoadingDataScan(false);
         this.setState({
           loadingDataScan: false,
           dataCMT: {
@@ -189,27 +188,15 @@ class CheckinOut extends Component {
             LoaiGiayTo: "CCCD",
             HoKhau: data.PersonalInfo.residencePlace,
           },
-          imageChanDung: data.ChipFace,
         });
       }
       if (data.Status === "FAILURE") {
-        // this.changeLoadingDataScan(false);
         this.setState({
           loadingDataScan: false,
         });
         message.destroy();
         message.warning("Xảy ra lỗi trong quá trình đọc thông tin CCCD");
       }
-      // if (data?.data?.img_data) {
-      //   this.setState({
-      //     imageChanDung: data.data.img_data,
-      //   });
-      // }
-      //  else if (data.status === "FACE_CAPTURE_FAILURE") {
-      //   this.changeLoadingDataScan(false);
-      //   message.destroy();
-      //   message.warning("Xảy ra lỗi trong quá trình quét thông tin từ CCCD");
-      // }
     };
 
     // Khi có lỗi
@@ -301,8 +288,10 @@ class CheckinOut extends Component {
     //
     const MODEL_URL = process.env.PUBLIC_URL + "/model";
     await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
-    await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
-    await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
+    // await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+    // await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
+    // await faceapi.nets.tinyYolov2.loadFromUri(MODEL_URL)
+    // await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL)
 
     this.delayChamCong = setInterval(() => {
       const newdelay = this.state.delayCC
@@ -408,7 +397,7 @@ class CheckinOut extends Component {
         sessionCode: data.sessionCode,
         CoQuanSuDungPhanMem: data.coQuanSuDungPhanMem,
         LyDoGap: data.lyDoGap,
-        GapCanBo: `${data.gapCanBo}_${data.donViCaNhan}`,
+        // GapCanBo: `${data.gapCanBo}_${data.donViCaNhan}`,
         DienThoai: data.dienThoai,
         TenCoQuan: data.tenCoQuan,
       };
@@ -1333,7 +1322,7 @@ class CheckinOut extends Component {
     dataCMT.NgayCapCMND = dataCMT.NgayCapCMND
       ? moment(dataCMT.NgayCapCMND)
       : "";
-    dataCMT.GapCanBo = `${data.GapCanBo}_${data.DonViCaNhan}`;
+    // dataCMT.GapCanBo = `${data.GapCanBo}_${data.DonViCaNhan}`;
     this.setState({
       selectIndex: -1,
       visiblePopoverMaThe: false,
@@ -1738,7 +1727,7 @@ class CheckinOut extends Component {
       },
       () => {
         if (dataNhanDien.ThongTinVaoRaID) {
-          dataCMT.GapCanBo = `${dataNhanDien.GapCanBo}_${dataNhanDien.DonViCaNhan}`;
+          // dataCMT.GapCanBo = `${dataNhanDien.GapCanBo}_${dataNhanDien.DonViCaNhan}`;
           dataCMT.LyDoGap = dataNhanDien.LyDoGap;
           dataCMT.GioVao = dataNhanDien.GioVao;
           dataCMT.ThongTinVaoRaID = dataNhanDien.ThongTinVaoRaID;
@@ -1913,7 +1902,7 @@ class CheckinOut extends Component {
                             {imageChanDung !== "" && !isCheckOut ? (
                               <CloseOutlined
                                 type={"close"}
-                                onClick={() => this.clearImage(1)}
+                                onClick={() => this.clearImage(3)}
                               />
                             ) : (
                               ""
