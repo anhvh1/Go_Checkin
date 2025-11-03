@@ -38,6 +38,10 @@ const TYPE = {
   ERROR: 1,
   SUCCESS: 2,
 };
+const STATE_SCAN = {
+  ERROR: 1,
+  SUCCESS: 2,
+};
 export default function CheckinOutV5() {
   const [animateId, setAnimateId] = useState(null);
   const socketRef = useRef();
@@ -53,7 +57,7 @@ export default function CheckinOutV5() {
   const [isLoadedModel, setIsLoadedModel] = useState(false);
   const [videoInput, setVideoInput] = useState([]);
   const [indexCamera, setIndexCamera] = useState(0);
-  const [isLiveView, setIsLiveView] = useState(false);
+  const [StateScan, setStateScan] = useState(0);
   const [delayCC, setdelayCC] = useState(0);
   const [totalCheckInOut, setTotalCheckinOut] = useState({
     checkIn: 0,
@@ -184,7 +188,9 @@ export default function CheckinOutV5() {
         setStatusRes({
           message: "Quý khách vui lòng quét thẻ căn cước để thực hiện checkin",
           type: TYPE.ERROR, //1 = error, 2 = success
+          Score : null,
         });
+        setStateScan(null)
       }
 
       if (data.EventName === "CARD_RESULT") {
@@ -205,7 +211,9 @@ export default function CheckinOutV5() {
         setStatusRes({
           message: "",
           type: null, //1 = error, 2 = success
+          Score: null,
         });
+        setStateScan(null)
         console.log('set success')
         setCurrentCheckin(dataReaded);
         currentRefCheckin.current = dataReaded
@@ -219,7 +227,9 @@ export default function CheckinOutV5() {
           message:
             "Xảy ra lỗi trong quá trình đọc thông tin thẻ căn cước, vui lòng thử lại!",
           type: TYPE.ERROR,
+          Score: null,
         });
+        setStateScan(null)
         // message.warning("Xảy ra lỗi trong quá trình đọc thông tin CCCD");
       }
     };
@@ -333,6 +343,7 @@ export default function CheckinOutV5() {
           setStatusRes({
             message: "Checkin thành công!",
             type: TYPE.SUCCESS,
+            Score: null,
           });
 
           getTotalCheckInOut();
@@ -348,6 +359,7 @@ export default function CheckinOutV5() {
           setStatusRes({
             message: response.data.Message,
             type: TYPE.ERROR,
+            Score: null,
           });
         }
       })
@@ -407,7 +419,6 @@ export default function CheckinOutV5() {
 
   const handleCompareFace = async (img,currentCheckin) => {
     setLoadingDataScan(true);
-    setCurrentCheckin({ ...currentRefCheckin.current, FaceImg: img });
     api
       .CompareFace({
         AnhCCCD: currentCheckin.imageChanDung,
@@ -415,14 +426,18 @@ export default function CheckinOutV5() {
       })
       .then((res) => {
         if (res.data.Score > 60) {
+          setCurrentCheckin({ ...currentRefCheckin.current, FaceImg: img });
+          setStateScan(STATE_SCAN.SUCCESS)
           CheckIn(currentCheckin);
         } else {
           console.log('set compare face fail')
           setCurrentCheckin({ ...currentRefCheckin.current, FaceImg: "" });
+          setStateScan(STATE_SCAN.ERROR)
           setLoadingDataScan(false);
           setStatusRes({
             message: res.data.Status,
             type: TYPE.ERROR,
+            Score: res.data.Score
           });
           setLoadingCheckIn(false);
         }
@@ -515,7 +530,7 @@ export default function CheckinOutV5() {
         audio={false}
         id={"capture-camera"}
         ref={!currentCheckin.FaceImg ? webcamRef : null}
-        screenshotQuality={0.5}
+        screenshotQuality={0.7}
         onUserMedia={handlePlay}
         screenshotFormat="image/jpeg"
         videoConstraints={{
@@ -524,6 +539,8 @@ export default function CheckinOutV5() {
         }}
       />
       <canvas id={"detect-canvas"} ref={canvasRef} />
+      <div className={`border-overlay ${StateScan === STATE_SCAN.ERROR ? "error-border" :
+                     StateScan === STATE_SCAN.SUCCESS ? "success-border" : ""}`}></div>
     </div>
   );
 
@@ -532,12 +549,12 @@ export default function CheckinOutV5() {
     if (str.length <= 6) return str; // nếu chuỗi ngắn, không cần rút gọn
     return str.slice(0, 3) + "........." + str.slice(-3);
   };
+
   const COLOR_SUCCESS = "#1E90FF";
   const COLOR_ERROR = "#FFC107";
   return (
     <div>
-      {/* CSS nhỏ gọn + hiệu ứng */}
-      {/* <div className="screen-wrapper">{cameraContentScan}</div> */}
+     
       <MainWrapper>
         <div className="left-panel">
           {loadingDataScan ? (
@@ -553,7 +570,7 @@ export default function CheckinOutV5() {
             <>
               <div className="face-wrapper">
                 {!currentCheckin.FaceImg ? (
-                  <div className="screen-wrapper">{cameraContentScan}</div>
+                  <div className={`screen-wrapper`}>{cameraContentScan}</div>
                 ) : (
                   <Avatar
                     size={300}

@@ -1,4 +1,23 @@
-import styled from "styled-components";
+import styled, { keyframes, css } from "styled-components";
+
+
+const smoothBlink = keyframes`
+  0% {
+    opacity: 1;
+  }
+  20% {
+    opacity: 0;
+  }
+  40% {
+    opacity: 1;
+  }
+  60% {
+    opacity: 0;
+  }
+  80%, 100% {
+    opacity: 1; /* Giữ nguyên ở trạng thái hiển thị cuối */
+  }
+`;
 
 export const MainWrapper = styled.div`
   display: flex;
@@ -6,6 +25,32 @@ export const MainWrapper = styled.div`
   min-height: 100vh;
   background: #fafbfc;
 
+  .camera-container {
+    position: relative;
+  }
+
+  .border-overlay {
+    position: absolute;
+    z-index: 2;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    border-radius: 50%;
+  }
+
+ .error-border {
+    border: 5px solid;
+    border-radius: 50%;
+    border-color: red;
+    animation: ${smoothBlink} 3s ease forwards;
+  }
+  .success-border {
+    border-radius: 50%;
+    border: 5px solid;
+    border-color: #00c853; /* xanh lá tươi */
+    animation: ${smoothBlink} 3s ease forwards;
+  }
   .status-checkin {
     text-align: center;
     padding:  0 20px;
