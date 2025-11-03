@@ -58,6 +58,7 @@ export default function CheckinOutV5() {
   const [videoInput, setVideoInput] = useState([]);
   const [indexCamera, setIndexCamera] = useState(0);
   const [StateScan, setStateScan] = useState(0);
+  const [isCallingApi, setIsCallingApi] = useState(false)
   const [delayCC, setdelayCC] = useState(0);
   const [totalCheckInOut, setTotalCheckinOut] = useState({
     checkIn: 0,
@@ -66,6 +67,7 @@ export default function CheckinOutV5() {
   const [statusRes, setStatusRes] = useState({
     message: "Quý khách vui lòng quét thẻ căn cước để thực hiện checkin",
     type: TYPE.ERROR, //1 = error, 2 = success
+    Score : null,
   });
   const listCheckinRef = useRef(listCheckin);
   const currentRefCheckin = useRef(null)
@@ -299,7 +301,7 @@ export default function CheckinOutV5() {
       });
   };
 
-  const CheckIn = (currentCheckin) => {
+  const CheckIn = (currentCheckin,score) => {
     const param = { ...currentCheckin };
     param.NgaySinh =
       param.NgaySinh !== ""
@@ -343,9 +345,9 @@ export default function CheckinOutV5() {
           setStatusRes({
             message: "Checkin thành công!",
             type: TYPE.SUCCESS,
-            Score: null,
+            Score: score,
           });
-
+          setIsCallingApi(false)
           getTotalCheckInOut();
           setFilterData((prevFilter) => ({ ...prevFilter, PageNumber: 1 }));
           GetListCheckin({
@@ -353,13 +355,14 @@ export default function CheckinOutV5() {
             PageNumber: 1,
           });
         } else {
+         setIsCallingApi(false)
           setLoadingDataScan(false);
           // message.destroy();
           // message.error(response.data.Message);
           setStatusRes({
             message: response.data.Message,
             type: TYPE.ERROR,
-            Score: null,
+            Score: score,
           });
         }
       })
@@ -368,6 +371,7 @@ export default function CheckinOutV5() {
         setLoadingDataScan(false);
         message.destroy();
         message.error(error.toString());
+        setIsCallingApi(false)
       });
   };
 
@@ -419,6 +423,7 @@ export default function CheckinOutV5() {
 
   const handleCompareFace = async (img,currentCheckin) => {
     setLoadingDataScan(true);
+    setIsCallingApi(true)
     api
       .CompareFace({
         AnhCCCD: currentCheckin.imageChanDung,
@@ -428,12 +433,13 @@ export default function CheckinOutV5() {
         if (res.data.Score > 60) {
           setCurrentCheckin({ ...currentRefCheckin.current, FaceImg: img });
           setStateScan(STATE_SCAN.SUCCESS)
-          CheckIn(currentCheckin);
+          CheckIn(currentCheckin,res.data.Score);
         } else {
           console.log('set compare face fail')
           setCurrentCheckin({ ...currentRefCheckin.current, FaceImg: "" });
           setStateScan(STATE_SCAN.ERROR)
           setLoadingDataScan(false);
+          setIsCallingApi(false)
           setStatusRes({
             message: res.data.Status,
             type: TYPE.ERROR,
@@ -443,6 +449,7 @@ export default function CheckinOutV5() {
         }
       })
       .catch((err) => {
+      setIsCallingApi(false)
         setLoadingDataScan(false);
       });
   };
@@ -455,7 +462,7 @@ export default function CheckinOutV5() {
     const base64Img = webcamRef.current.getScreenshot();
     console.log(base64Img, "base64Img");
 
-    if (base64Img) {
+    if (base64Img && !isCallingApi) {
       setLoadingCheckIn(true);
       handleCompareFace(base64Img,currentCheckin);
     }
@@ -492,8 +499,8 @@ export default function CheckinOutV5() {
         // canvasRef.current.innerHTML =
         //   faceapi.createCanvasFromMedia(videoSource);
         const displaySize = {
-          width: videoSource.offsetWidth,
-          height: videoSource.offsetHeight,
+          width: 300,
+          height: 300,
         };
         faceapi.matchDimensions(canvasRef.current, displaySize);
         const detection = await faceapi.detectAllFaces(
@@ -537,6 +544,11 @@ export default function CheckinOutV5() {
           deviceId: deviceCamera ? deviceCamera.deviceId : "",
           ...resolutionOfDiv,
         }}
+        style={{
+          width: "300px",
+          height: "300px",
+          objectFit: "cover", // tránh méo hình
+        }}
       />
       <canvas id={"detect-canvas"} ref={canvasRef} />
       <div className={`border-overlay ${StateScan === STATE_SCAN.ERROR ? "error-border" :
@@ -570,6 +582,7 @@ export default function CheckinOutV5() {
             <>
               <div className="face-wrapper">
                 {!currentCheckin.FaceImg ? (
+                  // <div>Liveview</div>
                   <div className={`screen-wrapper`}>{cameraContentScan}</div>
                 ) : (
                   <Avatar
@@ -578,6 +591,8 @@ export default function CheckinOutV5() {
                     className="greeting-avatar"
                   />
                 )}
+                {statusRes.Score >= 0 && typeof statusRes.Score === "number" ? <div className={`score ${statusRes.type === TYPE.ERROR ? "score-fail" 
+                  : statusRes.type === TYPE.SUCCESS ? "score-success" : ""}`}>{statusRes.Score}%</div> : null}
                 <Avatar
                   size={300}
                   src={currentCheckin.imageChanDung}

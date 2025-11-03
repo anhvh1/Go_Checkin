@@ -25,6 +25,17 @@ export const MainWrapper = styled.div`
   min-height: 100vh;
   background: #fafbfc;
 
+  .score {
+    align-self: flex-end;
+    font-size: 24px;
+  }
+
+  .score-fail {
+    color:red ;
+  }
+  .score-success {
+    color: #00c853;
+  }
   .camera-container {
     position: relative;
   }
@@ -60,10 +71,13 @@ export const MainWrapper = styled.div`
     gap: 40px;
     flex-wrap: wrap;
     align-items: center;
+    justify-content: center;
   }
 
   #capture-camera {
     border-radius: 50%;
+    /* width: 300px;
+    height: 300px; */
   }
 
   #detect-canvas {
