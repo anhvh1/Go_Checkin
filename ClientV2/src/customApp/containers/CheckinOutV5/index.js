@@ -74,6 +74,7 @@ export default function CheckinOutV5() {
   const filterDataRef = useRef(filterData);
   const webcamRef = useRef();
   const canvasRef = useRef();
+  const loadingCheckin = useRef()
   let videoCapture = null;
   let delayChamCong = null;
 
