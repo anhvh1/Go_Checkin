@@ -94,8 +94,9 @@ export const MainWrapper = styled.div`
     padding: 10px;
     gap: 0.5rem;
     border-radius: 12px;
-    flex: 1;
+    /* flex: 1; */
     justify-content: center;
+    min-height: 200px;
   }
 
   .empty-list {
@@ -141,8 +142,10 @@ export const MainWrapper = styled.div`
     align-items: center;
     flex: 1;
     flex-direction: column;
-    justify-content: center;
+    /* justify-content: center; */
+    justify-content: space-between;
     padding: 20px;
+    gap: 10px;
   }
 
   /* ==== LEFT PANEL ==== */
@@ -172,9 +175,9 @@ export const MainWrapper = styled.div`
     align-items: flex-start;
     justify-content: center;
     gap: 60px;
-    margin-bottom: 24px;
+    /* margin-bottom: 24px; */
     align-items: center;
-    padding: 3rem 0;
+    /* padding: 3rem 0; */
   }
 
   .camera-container {
@@ -490,6 +493,11 @@ export const MainWrapper = styled.div`
 
     .greeting-info {
       width: 100%;
+    }
+  }
+  @media (max-width: 756px) {
+    .face-wrapper {
+      display: grid;
     }
   }
 `;

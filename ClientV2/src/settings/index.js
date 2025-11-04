@@ -1,12 +1,12 @@
 const date = new Date();
 const currentYear = date.getFullYear();
 export default {
-  apiInOut: "http://localhost:5017/api/v1/", //public v1//
-  apiInOutv2: "http://localhost:5017/api/v2/", //public v2//
-  apiInOutv4: "http://localhost:5017/api/v4/",
-  // apiInOut: "https://apigocheckinv4.gosol.com.vn/api/v1/", //public v1//
-  // apiInOutv2: "https://apigocheckinv4.gosol.com.vn/api/v2/", //public v2//
-  // apiInOutv4: "https://apigocheckinv4.gosol.com.vn/api/v4/",
+  // apiInOut: "http://localhost:5017/api/v1/", //public v1//
+  // apiInOutv2: "http://localhost:5017/api/v2/", //public v2//
+  // apiInOutv4: "http://localhost:5017/api/v4/",
+  apiInOut: "https://apigocheckinv4.gosol.com.vn/api/v1/", //public v1//
+  apiInOutv2: "https://apigocheckinv4.gosol.com.vn/api/v2/", //public v2//
+  apiInOutv4: "https://apigocheckinv4.gosol.com.vn/api/v4/",
   // apiInOut: 'https://apigocheckintest.gosol.com.vn/api/v1/',//public v1 test//
   // apiInOutPublic: 'https://apigocheckintest.gosol.com.vn/api/v2/',//public v2 test//
   // apiInOut: 'https://localhost:44320/api/v1/',//public v1 local//

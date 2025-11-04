@@ -459,18 +459,21 @@ export default function CheckinOutV5() {
           CheckIn(currentCheckin,res.data.Score);
         } else {
           console.log('set compare face fail')
+          
           handleRetryDelay()
-          setCurrentCheckin({ ...currentRefCheckin.current, FaceImg: "" });
-          setStateScan(STATE_SCAN.ERROR)
-          setLoadingDataScan(false);
-         refCallingApi.current = false;
-          setIsCallingApi(false)
-          setStatusRes({
-            message: res.data.Status,
-            type: TYPE.ERROR,
-            Score: res.data.Score
-          });
-          setLoadingCheckIn(false);
+          setTimeout(() => {
+            setCurrentCheckin({ ...currentRefCheckin.current, FaceImg: "" });
+            setStateScan(STATE_SCAN.ERROR)
+            setLoadingDataScan(false);
+            refCallingApi.current = false;
+            setIsCallingApi(false)
+            setStatusRes({
+              message: res.data.Status,
+              type: TYPE.ERROR,
+              Score: res.data.Score
+            });
+            setLoadingCheckIn(false);
+          },2000)
         }
       })
       .catch((err) => {
@@ -610,6 +613,7 @@ export default function CheckinOutV5() {
             <div className="greeting-body">
               {/* {currentCheckin.SoCMND ? ( */}
                 <>
+                  <div className="empty"></div>
                   <div className="face-wrapper">
                     <div className="card">
                       <Avatar
