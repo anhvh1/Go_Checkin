@@ -20,7 +20,7 @@ import {
   message,
   Modal,
 } from "antd";
-import { UserOutlined } from "@ant-design/icons";
+import { CheckCircleOutlined, ClockCircleOutlined, CloseCircleOutlined, CreditCardOutlined, UserAddOutlined, UserDeleteOutlined, UserOutlined } from "@ant-design/icons";
 import moment from "moment";
 import Webcam from "react-webcam";
 // Ảnh mẫu (đã có sẵn trong repo)
@@ -74,13 +74,23 @@ export default function CheckinOutV5() {
   const filterDataRef = useRef(filterData);
   const webcamRef = useRef();
   const canvasRef = useRef();
-  const loadingCheckin = useRef()
+  const refCallingApi = useRef(isCallingApi)
+  const delayDetectFace = useRef(delayCC)
+  const scoreCompareFace = 60
   let videoCapture = null;
   let delayChamCong = null;
 
   useEffect(() => {
     listCheckinRef.current = listCheckin;
   }, [listCheckin]);
+  
+   useEffect(() => {
+    delayDetectFace.current = delayCC;
+  }, [delayCC]);
+
+   useEffect(() => {
+    refCallingApi.current = isCallingApi;
+  }, [isCallingApi]);
 
   useEffect(() => {
     filterDataRef.current = filterData;
@@ -163,7 +173,7 @@ export default function CheckinOutV5() {
     }
   };
 
-  console.log(currentCheckin,'currentCheckin')
+ 
 
   const handleConnectSocketScan = () => {
     const socket = new WebSocket(`ws://localhost:${setting.socketPort}`);
@@ -335,7 +345,7 @@ export default function CheckinOutV5() {
         param.DonViCaNhan = 0;
       }
     }
-    console.log("post checkin data");
+   
     api
       .Checkinv4(param)
       .then((response) => {
@@ -348,6 +358,7 @@ export default function CheckinOutV5() {
             type: TYPE.SUCCESS,
             Score: score,
           });
+         refCallingApi.current = false;
           setIsCallingApi(false)
           getTotalCheckInOut();
           setFilterData((prevFilter) => ({ ...prevFilter, PageNumber: 1 }));
@@ -356,6 +367,7 @@ export default function CheckinOutV5() {
             PageNumber: 1,
           });
         } else {
+         refCallingApi.current = false;
          setIsCallingApi(false)
           setLoadingDataScan(false);
           // message.destroy();
@@ -372,6 +384,7 @@ export default function CheckinOutV5() {
         setLoadingDataScan(false);
         message.destroy();
         message.error(error.toString());
+       refCallingApi.current = false;
         setIsCallingApi(false)
       });
   };
@@ -422,8 +435,18 @@ export default function CheckinOutV5() {
     return reason;
   };
 
+  const handleRetryDelay = () => {
+    setdelayCC(1); // chỉ dùng như flag
+    console.log('delay detech face')
+    setTimeout(() => {
+      setdelayCC(0);
+    }, 5000); // 2s mới cho phép gọi lại
+  };
+
   const handleCompareFace = async (img,currentCheckin) => {
     setLoadingDataScan(true);
+    setCurrentCheckin({ ...currentRefCheckin.current, FaceImg: img });
+    refCallingApi.current = true;
     setIsCallingApi(true)
     api
       .CompareFace({
@@ -431,15 +454,16 @@ export default function CheckinOutV5() {
         AnhChanDung: img,
       })
       .then((res) => {
-        if (res.data.Score > 60) {
-          setCurrentCheckin({ ...currentRefCheckin.current, FaceImg: img });
+        if (res.data.Score > scoreCompareFace) {
           setStateScan(STATE_SCAN.SUCCESS)
           CheckIn(currentCheckin,res.data.Score);
         } else {
           console.log('set compare face fail')
+          handleRetryDelay()
           setCurrentCheckin({ ...currentRefCheckin.current, FaceImg: "" });
           setStateScan(STATE_SCAN.ERROR)
           setLoadingDataScan(false);
+         refCallingApi.current = false;
           setIsCallingApi(false)
           setStatusRes({
             message: res.data.Status,
@@ -450,7 +474,9 @@ export default function CheckinOutV5() {
         }
       })
       .catch((err) => {
-      setIsCallingApi(false)
+        handleRetryDelay()
+        refCallingApi.current = false;
+        setIsCallingApi(false)
         setLoadingDataScan(false);
       });
   };
@@ -463,7 +489,7 @@ export default function CheckinOutV5() {
     const base64Img = webcamRef.current.getScreenshot();
     console.log(base64Img, "base64Img");
 
-    if (base64Img && !isCallingApi) {
+    if (base64Img && !refCallingApi.current) {
       setLoadingCheckIn(true);
       handleCompareFace(base64Img,currentCheckin);
     }
@@ -500,8 +526,8 @@ export default function CheckinOutV5() {
         // canvasRef.current.innerHTML =
         //   faceapi.createCanvasFromMedia(videoSource);
         const displaySize = {
-          width: 300,
-          height: 300,
+          width: 240,
+          height: 240,
         };
         faceapi.matchDimensions(canvasRef.current, displaySize);
         const detection = await faceapi.detectAllFaces(
@@ -517,9 +543,10 @@ export default function CheckinOutV5() {
         //     .getContext("2d")
         //     .clearRect(0, 0, videoSource.width, videoSource.height);
         // faceapi.draw.drawDetections(canvasRef.current, resizedDetection);
-        console.log(detection, "detection checkin", delayCC, "delayCC");
-        if (detection.length) {
-          if (delayCC === 0) {
+        // console.log(detection, "detection checkin", delayCC, "delayCC");
+        if (detection.length  && !refCallingApi.current) {
+          if (delayDetectFace.current === 0) {
+            console.log('try calling api ',delayDetectFace.current)
             checkBeforeSend(currentCheckin);
           }
         }
@@ -529,8 +556,8 @@ export default function CheckinOutV5() {
 
   let deviceCamera = videoInput.length ? videoInput[indexCamera] : null;
   const resolutionOfDiv = {
-    width: 300,
-    height: 300,
+    width: 240,
+    height: 240,
   };
   const cameraContentScan = (
     <div className={"camera-container"} style={{ ...resolutionOfDiv }}>
@@ -546,14 +573,14 @@ export default function CheckinOutV5() {
           ...resolutionOfDiv,
         }}
         style={{
-          width: "300px",
-          height: "300px",
+          width: "240px",
+          height: "240px",
           objectFit: "cover", // tránh méo hình
         }}
       />
       <canvas id={"detect-canvas"} ref={canvasRef} />
-      <div className={`border-overlay ${StateScan === STATE_SCAN.ERROR ? "error-border" :
-                     StateScan === STATE_SCAN.SUCCESS ? "success-border" : ""}`}></div>
+      {/* <div className={`border-overlay ${StateScan === STATE_SCAN.ERROR ? "error-border" :
+                     StateScan === STATE_SCAN.SUCCESS ? "success-border" : ""}`}></div> */}
     </div>
   );
 
@@ -563,99 +590,133 @@ export default function CheckinOutV5() {
     return str.slice(0, 3) + "........." + str.slice(-3);
   };
 
-  const COLOR_SUCCESS = "#1E90FF";
-  const COLOR_ERROR = "#FFC107";
+  const COLOR_SUCCESS = "#fff";
+  const COLOR_ERROR = "#fff";
+  const checkResultScore = statusRes.Score >= 0 && typeof statusRes.Score === "number"
   return (
     <div>
-     
       <MainWrapper>
         <div className="left-panel">
-          {loadingDataScan ? (
-            <div className="spin-container">
-              <Spin size="large" />
+          <div className="left-panel__top">
+            {loadingDataScan ? (
+              <div className="spin-container">
+                <Spin size="large" />
+              </div>
+            ) : null}
+
+            <div className="greeting-title" style={{ color: COLOR_SUCCESS }}>
+              Xin chào quý khách
             </div>
-          ) : null}
+            <div className="greeting-body">
+              {/* {currentCheckin.SoCMND ? ( */}
+                <>
+                  <div className="face-wrapper">
+                    <div className="card">
+                      <Avatar
+                        size={240}
+                        src={currentCheckin.imageChanDung}
+                        className="greeting-avatar"
+                      />
+                      <p>Ảnh thẻ CCCD</p>
+                    </div>
+                    
+                   <div className={`score ${statusRes.type === TYPE.ERROR ? "score-fail" 
+                      : statusRes.type === TYPE.SUCCESS ? "score-success" : ""}`}>
+                        <div className={checkResultScore  ? "score-circle" : ""}>
+                          {checkResultScore ? statusRes.Score >= scoreCompareFace ? <CheckCircleOutlined /> : <CloseCircleOutlined/> : null}
+                        </div>
+                        <p style = {{color : statusRes.Score >= scoreCompareFace ? 'green' : 'black' }}>{checkResultScore ? statusRes.Score >= scoreCompareFace ? "Khớp" : "Không khớp" : ""}</p>
+                      </div>
+                    <div className="card-liveview">
+                      {!currentCheckin.FaceImg && currentCheckin.SoCMND ? (
+                      //    <Avatar
+                      //   size={240}
+                      //   src={currentCheckin.imageChanDung}
+                      //   className="greeting-avatar"
+                      // />
+                        <div className={`screen-wrapper`}>{cameraContentScan}</div>
+                      ) : (
+                        <Avatar
+                          size={240}
+                          src={currentCheckin.FaceImg}
+                          className="greeting-avatar"
+                        />
+                      )}
+                      <p>Ảnh chụp</p>
+                    </div>
+                  </div>
 
-          <div className="greeting-title" style={{ color: COLOR_SUCCESS }}>
-            Xin chào quý khách
+                  <div className="face-info">
+                    <div className="greeting-name">{currentCheckin.HoVaTen}</div>
+                    <div className="greeting-cccd">
+                    <CreditCardOutlined/> Thẻ căn cước: {currentCheckin.SoCMND ? shortenNumberString(currentCheckin.SoCMND) : "........."}
+                    </div>
+                    <div className="greeting-checkin">
+                    <ClockCircleOutlined/> Giờ checkin: <span className="checkin-time">{currentCheckin.checkinAt ? moment(currentCheckin.checkinAt).format("HH:mm") : "........."}</span>
+                    </div>
+                    {statusRes.message ? (
+                      <h1
+                        className={`${statusRes.type === TYPE.ERROR
+                              ? "error"
+                              : ""} status-checkin`}
+                        style={{
+                          color:
+                            statusRes.type === TYPE.ERROR
+                              ? COLOR_ERROR
+                              : COLOR_SUCCESS,
+                        }}
+                      >
+                       {statusRes.type === TYPE.ERROR
+                              ? <CloseCircleOutlined/>
+                              : <CheckCircleOutlined/>}  
+                        {statusRes.message}
+                      </h1>
+                    ) : null}
+                  </div>
+                </>
+              {/* ) : ( */}
+                {/* <>
+                  {statusRes.message ? (
+                    <h1
+                    
+                      className={`${statusRes.type === TYPE.ERROR
+                              ? "error"
+                              : ""} status-checkin`}
+                      style={{
+                        color:
+                          statusRes.type === TYPE.ERROR
+                            ? COLOR_ERROR
+                            : COLOR_SUCCESS,
+                        width : '60%'
+                      }}
+                    >
+                      {statusRes.message}
+                    </h1>
+                  ) : null}
+                </> */}
+              {/* )} */}
+            </div>
           </div>
-          {currentCheckin.SoCMND ? (
-            <>
-              <div className="face-wrapper">
-                {!currentCheckin.FaceImg ? (
-                  // <div>Liveview</div>
-                  <div className={`screen-wrapper`}>{cameraContentScan}</div>
-                ) : (
-                  <Avatar
-                    size={300}
-                    src={currentCheckin.FaceImg}
-                    className="greeting-avatar"
-                  />
-                )}
-                {statusRes.Score >= 0 && typeof statusRes.Score === "number" ? <div className={`score ${statusRes.type === TYPE.ERROR ? "score-fail" 
-                  : statusRes.type === TYPE.SUCCESS ? "score-success" : ""}`}>{statusRes.Score}%</div> : null}
-                <Avatar
-                  size={300}
-                  src={currentCheckin.imageChanDung}
-                  className="greeting-avatar"
-                />
-              </div>
-
-              <div className="greeting-name">{currentCheckin.HoVaTen}</div>
-              <div className="greeting-cccd">
-                Thẻ căn cước: {shortenNumberString(currentCheckin.SoCMND)}
-              </div>
-              <div className="greeting-checkin">
-                Giờ checkin: {moment(currentCheckin.checkinAt).format("HH:mm")}
-              </div>
-              {statusRes.message ? (
-                <h1
-                  className="status-checkin"
-                  style={{
-                    color:
-                      statusRes.type === TYPE.ERROR
-                        ? COLOR_ERROR
-                        : COLOR_SUCCESS,
-                  }}
-                >
-                  {statusRes.message}
-                </h1>
-              ) : null}
-            </>
-          ) : (
-            <>
-              {statusRes.message ? (
-                <h1
-                  className="status-checkin"
-                  style={{
-                    color:
-                      statusRes.type === TYPE.ERROR
-                        ? COLOR_ERROR
-                        : COLOR_SUCCESS,
-                  }}
-                >
-                  {statusRes.message}
-                </h1>
-              ) : null}
-            </>
-          )}
 
           <div className="stats-row">
             <div className="stat-card">
-              <span className="stat-label">Đã checkin</span>
-              {totalCheckInOut.checkIn}
+              <span className="stat-label"><UserAddOutlined className ="stat-label__icon"/> Tổng số đã checkin</span>
+              <p className="stat-count">{totalCheckInOut.checkIn}</p>
+              <UserAddOutlined className = "blur-icon"/>
             </div>
             <div className="stat-card">
-              <span className="stat-label">Đã checkout</span>
-              {totalCheckInOut.checkOut}
+              <span className="stat-label"><UserDeleteOutlined className ="stat-label__icon"/> Đã checkout</span>
+             <p className="stat-count">{totalCheckInOut.checkOut}</p>
+             <UserDeleteOutlined className = "blur-icon"/>
             </div>
           </div>
         </div>
         <div className="right-panel">
           <div className="list-title">Danh sách khách đã checkin</div>
-          <div className="customer-list">
+          <div className={`customer-list ${listCheckin.length === 0 ? "customer-list__empty" : ""}`}>
             {listCheckin.length === 0 ? (
-              <div className="empty-list">Chưa có khách nào checkin</div>
+              <></>
+              // <div className="empty-list">Chưa có khách nào checkin</div>
             ) : (
               listCheckin.map((item) => (
                 <div className="customer-card" key={item.id}>
@@ -669,12 +730,17 @@ export default function CheckinOutV5() {
                     className="customer-avatar"
                   />
                   <div className="customer-info">
-                    <div className="customer-name">{item.HoVaTen}</div>
-                    <div className="customer-cccd">
-                      Thẻ căn cước: {shortenNumberString(item.SoCMND)}
+                   <div className="info">
+                      <div className="customer-name">{item.HoVaTen}</div>
+                      <div className="customer-cccd">
+                        {shortenNumberString(item.SoCMND)}
+                      </div>
+                      <div className="customer-checkin">
+                        <ClockCircleOutlined/> {moment(item.GioVao).format("HH:mm ")}
+                      </div>
                     </div>
-                    <div className="customer-checkin">
-                      Giờ checkin: {moment(item.GioVao).format("HH:mm ")}
+                    <div className="status">
+                      <p className="status-customer__checkin">Đã vào</p>
                     </div>
                   </div>
                 </div>
